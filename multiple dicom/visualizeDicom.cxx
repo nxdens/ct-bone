@@ -20,8 +20,14 @@
 #include <vtkTextMapper.h>
 // needed to easily convert int to std::string
 #include <sstream>
- 
- 
+//needed for the render 
+#include <vtkImageData.h>
+#include <vtkInteractorStyleTrackballCamera.h>
+#include <vtkSmartVolumeMapper.h>
+#include <vtkVolumeProperty.h>
+#include <vtkPiecewiseFunction.h>
+#include <vtkColorTransferFunction.h>
+
 // helper class to format slice status message
 class StatusMessage {
 public:
@@ -53,7 +59,7 @@ public:
       _MinSlice = imageViewer->GetSliceMin();
       _MaxSlice = imageViewer->GetSliceMax();
       _Slice = _MinSlice;
-      cout << "Slicer: Min = " << _MinSlice << ", Max = " << _MaxSlice << std::endl;
+      //cout << "Slicer: Min = " << _MinSlice << ", Max = " << _MaxSlice << std::endl;
    }
  
    void SetStatusMapper(vtkTextMapper* statusMapper) {
@@ -65,7 +71,7 @@ protected:
    void MoveSliceForward() {
       if(_Slice < _MaxSlice) {
          _Slice += 1;
-         cout << "MoveSliceForward::Slice = " << _Slice << std::endl;
+         //cout << "MoveSliceForward::Slice = " << _Slice << std::endl;
          _ImageViewer->SetSlice(_Slice);
          std::string msg = StatusMessage::Format(_Slice, _MaxSlice);
          _StatusMapper->SetInput(msg.c_str());
@@ -76,7 +82,7 @@ protected:
    void MoveSliceBackward() {
       if(_Slice > _MinSlice) {
          _Slice -= 1;
-         cout << "MoveSliceBackward::Slice = " << _Slice << std::endl;
+         //cout << "MoveSliceBackward::Slice = " << _Slice << std::endl;
          _ImageViewer->SetSlice(_Slice);
          std::string msg = StatusMessage::Format(_Slice, _MaxSlice);
          _StatusMapper->SetInput(msg.c_str());
@@ -278,13 +284,73 @@ int main(int argc, char* argv[])
    axialViewer->GetRenderWindow()->SetWindowName("Axial");
 
    //window size
-   sagittalViewer->GetRenderWindow()->SetSize(500,500);
-   coronalViewer->GetRenderWindow()->SetSize(300,250);
-   axialViewer->GetRenderWindow()->SetSize(300,250);
+   sagittalViewer->GetRenderWindow()->SetSize(400,500);
+   coronalViewer->GetRenderWindow()->SetSize(300,245);
+   axialViewer->GetRenderWindow()->SetSize(300,225);
 
    //organize windows
-   coronalViewer->GetRenderWindow()->SetPosition(500,0);
-   axialViewer->GetRenderWindow()->SetPosition(500,250);
+   coronalViewer->GetRenderWindow()->SetPosition(400,0);
+   axialViewer->GetRenderWindow()->SetPosition(400,275);
+
+   //setup for 3d render 
+   //needs to be cleaned up
+   vtkSmartPointer<vtkImageData> imageData = vtkSmartPointer<vtkImageData>::New();
+   vtkSmartPointer<vtkRenderWindow> renderWindow = vtkSmartPointer<vtkRenderWindow>::New();
+   vtkSmartPointer<vtkRenderer> renderer = vtkSmartPointer<vtkRenderer>::New();
+   vtkSmartPointer<vtkInteractorStyleTrackballCamera> interactorStyle = vtkSmartPointer<vtkInteractorStyleTrackballCamera>::New();
+   vtkSmartPointer<vtkRenderWindowInteractor> renderWindowInteractor = vtkSmartPointer<vtkRenderWindowInteractor>::New();
+   vtkSmartPointer<vtkSmartVolumeMapper> volumeMapper = vtkSmartPointer<vtkSmartVolumeMapper>::New();
+   vtkSmartPointer<vtkVolumeProperty> volumeProperty = vtkSmartPointer<vtkVolumeProperty>::New();
+   vtkSmartPointer<vtkPiecewiseFunction> gradientOpacity = vtkSmartPointer<vtkPiecewiseFunction>::New();
+   vtkSmartPointer<vtkPiecewiseFunction> scalarOpacity = vtkSmartPointer<vtkPiecewiseFunction>::New();
+   vtkSmartPointer<vtkColorTransferFunction> color = vtkSmartPointer<vtkColorTransferFunction>::New();
+   vtkSmartPointer<vtkVolume> volume = vtkSmartPointer<vtkVolume>::New();
+
+   imageData->ShallowCopy(reader->GetOutput());
+   renderer->SetBackground(0.1, 0.2, 0.3);
+
+  renderWindow->AddRenderer(renderer);
+  renderWindow->SetSize(500, 500);
+
+  renderWindowInteractor->SetInteractorStyle(interactorStyle);
+  renderWindowInteractor->SetRenderWindow(renderWindow);
+
+  volumeMapper->SetBlendModeToComposite();
+  volumeMapper->SetRequestedRenderModeToGPU();
+  volumeMapper->SetInputData(imageData);
+
+  volumeProperty->ShadeOn();
+  volumeProperty->SetInterpolationTypeToLinear();
+
+  volumeProperty->SetAmbient(0.1);
+  volumeProperty->SetDiffuse(0.9);
+  volumeProperty->SetSpecular(0.2);
+  volumeProperty->SetSpecularPower(10.0);
+
+  gradientOpacity->AddPoint(0.0, 0.0);
+  gradientOpacity->AddPoint(2000.0, 1.0);
+  volumeProperty->SetGradientOpacity(gradientOpacity);
+
+  scalarOpacity->AddPoint(-100.0, -10.0);
+  scalarOpacity->AddPoint(100.0, 1.0);
+  scalarOpacity->AddPoint(3000.0, 0.0);
+  volumeProperty->SetScalarOpacity(scalarOpacity);
+
+  color->AddRGBPoint(-750.0, 0.08, 0.05, 0.03);
+  color->AddRGBPoint(-350.0, 0.39, 0.25, 0.16);
+  color->AddRGBPoint(-200.0, 0.80, 0.80, 0.80);
+  color->AddRGBPoint(100.0, 0.70, 0.70, 0.70);
+  color->AddRGBPoint(3000.0, 0.35, 0.35, 0.35);
+  volumeProperty->SetColor(color);
+
+  volume->SetMapper(volumeMapper);
+  volume->SetProperty(volumeProperty);
+  renderer->AddVolume(volume);
+  renderer->ResetCamera();
+
+  renderWindow->Render();
+  renderWindow->SetPosition(700,0);
+  renderWindow->SetWindowName("3D Render");
    coronalInteractor->Start();
 
 
