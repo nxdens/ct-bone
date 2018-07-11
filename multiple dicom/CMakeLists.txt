@@ -5,7 +5,7 @@ PROJECT(visualizeDicom)
 find_package(VTK REQUIRED)
 include(${VTK_USE_FILE})
  
-add_executable(visualizeDicom MACOSX_BUNDLE visualizeDicom.cxx)
+add_executable(visualizeDicom visualizeDicom.cxx)
  
 if(VTK_LIBRARIES)
   target_link_libraries(visualizeDicom ${VTK_LIBRARIES})

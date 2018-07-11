@@ -193,7 +193,7 @@ int main(int argc, char* argv[])
       //sets how to look at the slices by fixing the X and the Z axes
    axialViewer-> SetSliceOrientationToXZ(); 
 
-   axialViewer->GetRenderWindow()->SetWindowName("Axial");
+   
 
       //status messages showing frame number
          //text properties
@@ -235,7 +235,7 @@ int main(int argc, char* argv[])
    vtkSmartPointer<vtkImageViewer2> coronalViewer = vtkSmartPointer<vtkImageViewer2>::New();
    coronalViewer->SetInputConnection(reader->GetOutputPort());
    coronalViewer-> SetSliceOrientationToYZ(); 
-   coronalViewer->GetRenderWindow()->SetWindowName("Coronal");
+   
 
       //status messages showing frame number
          //text properties
@@ -271,7 +271,20 @@ int main(int argc, char* argv[])
    coronalViewer->GetRenderer()->ResetCamera();
    coronalViewer->Render();
    //end coronal initialization
+
+   //configuring window properties
    sagittalViewer->GetRenderWindow()->SetWindowName("Sagittal");
+   coronalViewer->GetRenderWindow()->SetWindowName("Coronal");
+   axialViewer->GetRenderWindow()->SetWindowName("Axial");
+
+   //window size
+   sagittalViewer->GetRenderWindow()->SetSize(500,500);
+   coronalViewer->GetRenderWindow()->SetSize(300,250);
+   axialViewer->GetRenderWindow()->SetSize(300,250);
+
+   //organize windows
+   coronalViewer->GetRenderWindow()->SetPosition(500,0);
+   axialViewer->GetRenderWindow()->SetPosition(500,250);
    coronalInteractor->Start();
 
 
