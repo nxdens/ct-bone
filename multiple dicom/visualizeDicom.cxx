@@ -307,7 +307,8 @@ int main(int argc, char* argv[])
    vtkSmartPointer<vtkVolume> volume = vtkSmartPointer<vtkVolume>::New();
 
    imageData->ShallowCopy(reader->GetOutput());
-   renderer->SetBackground(0.1, 0.2, 0.3);
+   
+   //renderer->SetBackground(0.1, 0.2, 0.3);
 
   renderWindow->AddRenderer(renderer);
   renderWindow->SetSize(500, 500);
@@ -315,32 +316,31 @@ int main(int argc, char* argv[])
   renderWindowInteractor->SetInteractorStyle(interactorStyle);
   renderWindowInteractor->SetRenderWindow(renderWindow);
 
-  volumeMapper->SetBlendModeToComposite();
+  //volumeMapper->SetBlendModeToAdditive();
   volumeMapper->SetRequestedRenderModeToGPU();
   volumeMapper->SetInputData(imageData);
 
-  volumeProperty->ShadeOn();
+  //volumeProperty->ShadeOn();
   volumeProperty->SetInterpolationTypeToLinear();
 
-  volumeProperty->SetAmbient(0.1);
-  volumeProperty->SetDiffuse(0.9);
-  volumeProperty->SetSpecular(0.2);
-  volumeProperty->SetSpecularPower(10.0);
+  //volumeProperty->SetAmbient(0.1);
+  //volumeProperty->SetDiffuse(0.001);
+  //volumeProperty->SetSpecular(0.9);
+  //volumeProperty->SetSpecularPower(1.0);
 
-  gradientOpacity->AddPoint(0.0, 0.0);
-  gradientOpacity->AddPoint(2000.0, 1.0);
-  volumeProperty->SetGradientOpacity(gradientOpacity);
+  gradientOpacity->AddPoint(99.0, .3);
+  gradientOpacity->AddPoint(100.0, 1.0);
+  //gradientOpacity->AddPoint(3000.0,0);
+  //volumeProperty->SetGradientOpacity(gradientOpacity);
 
-  scalarOpacity->AddPoint(-100.0, -10.0);
-  scalarOpacity->AddPoint(100.0, 1.0);
-  scalarOpacity->AddPoint(3000.0, 0.0);
+  scalarOpacity->AddPoint(0, -0.01);
+  scalarOpacity->AddPoint(74, .00);
+  scalarOpacity->AddPoint(75.0, 1);
+  scalarOpacity->AddPoint(3000.0, 1);
   volumeProperty->SetScalarOpacity(scalarOpacity);
 
-  color->AddRGBPoint(-750.0, 0.08, 0.05, 0.03);
-  color->AddRGBPoint(-350.0, 0.39, 0.25, 0.16);
-  color->AddRGBPoint(-200.0, 0.80, 0.80, 0.80);
-  color->AddRGBPoint(100.0, 0.70, 0.70, 0.70);
-  color->AddRGBPoint(3000.0, 0.35, 0.35, 0.35);
+
+  color->AddRGBPoint(100.0, 0.5, .5,0.5);
   volumeProperty->SetColor(color);
 
   volume->SetMapper(volumeMapper);
@@ -351,6 +351,8 @@ int main(int argc, char* argv[])
   renderWindow->Render();
   renderWindow->SetPosition(700,0);
   renderWindow->SetWindowName("3D Render");
+  
+
    coronalInteractor->Start();
 
 
