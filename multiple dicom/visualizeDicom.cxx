@@ -37,7 +37,29 @@ public:
       return tmp.str();
    }
 };
- 
+class Setup{
+public:
+   static void setupView(vtkImageViewer2* viewer, vtkTextProperty * textProp, vtkTextMapper * textMapper, vtkActor2D * actor){
+      setupText(textProp);
+      std::string msg = StatusMessage::Format(viewer->GetSliceMin(), viewer->GetSliceMax());
+      textMapper->SetInput(msg.c_str());
+      textMapper->SetTextProperty(textProp);
+
+      actor->SetMapper(textMapper);
+      actor->SetPosition(15,10);
+
+      viewer->GetRenderer()->AddActor2D(actor);
+   }
+protected:
+    static void setupText(vtkTextProperty * textProp)
+   { 
+      textProp->SetFontFamilyToCourier();
+      textProp->SetFontSize(20);
+      textProp->SetVerticalJustificationToBottom();
+      textProp->SetJustificationToLeft();
+   }
+   
+};
  
 // Define own interaction style
 class myVtkInteractorStyleImage : public vtkInteractorStyleImage
@@ -99,8 +121,8 @@ protected:
       }
       else if(key.compare("Down") == 0) {
          //cout << "Down arrow key was pressed." << endl;
-         MoveSliceBackward();
-      }
+         MoveSliceBackward()
+;      }
       // forward event
       vtkInteractorStyleImage::OnKeyDown();
    }
@@ -125,10 +147,13 @@ protected:
       // vtkInteractorStyleImage::OnMouseWheelBackward();
    }
 };
- 
+
+
+
+
 vtkStandardNewMacro(myVtkInteractorStyleImage);
- 
- 
+
+
 int main(int argc, char* argv[])
 {
    // Verify input arguments
@@ -152,33 +177,20 @@ int main(int argc, char* argv[])
       //sagittal view initialization
    vtkSmartPointer<vtkImageViewer2> sagittalViewer = vtkSmartPointer<vtkImageViewer2>::New();
    sagittalViewer->SetInputConnection(reader->GetOutputPort());
-
    sagittalViewer->GetRenderWindow()->SetWindowName("Sagittal");
 
-      //status messages showing frame number
-         //text properties
-      vtkSmartPointer<vtkTextProperty> sagittalTextProp = vtkSmartPointer<vtkTextProperty>::New();
-      sagittalTextProp->SetFontFamilyToCourier();
-      sagittalTextProp->SetFontSize(20);
-      sagittalTextProp->SetVerticalJustificationToBottom();
-      sagittalTextProp->SetJustificationToLeft();
-         //actual text
-      vtkSmartPointer<vtkTextMapper> sagittalTextMapper = vtkSmartPointer<vtkTextMapper>::New();
-      std::string sagMsg = StatusMessage::Format(sagittalViewer->GetSliceMin(), sagittalViewer->GetSliceMax());
-      sagittalTextMapper->SetInput(sagMsg.c_str());
-      sagittalTextMapper->SetTextProperty(sagittalTextProp);
-         //puts creates actor to wrap the text onto the render frame
-      vtkSmartPointer<vtkActor2D> sagittalTextActor = vtkSmartPointer<vtkActor2D>::New();
-      sagittalTextActor->SetMapper(sagittalTextMapper);
-      sagittalTextActor->SetPosition(15,10);
-      //add it to the viewer
-      sagittalViewer->GetRenderer()->AddActor2D(sagittalTextActor);
+   vtkSmartPointer<vtkTextProperty> sagittalTextProp = vtkSmartPointer<vtkTextProperty>::New();
+   vtkSmartPointer<vtkTextMapper> sagittalTextMapper = vtkSmartPointer<vtkTextMapper>::New();
+   vtkSmartPointer<vtkActor2D> sagittalTextActor = vtkSmartPointer<vtkActor2D>::New();
+
+   Setup::setupView(sagittalViewer, sagittalTextProp, sagittalTextMapper, sagittalTextActor);
+
 
    //create interactors
    vtkSmartPointer<vtkRenderWindowInteractor> sagittalInteractor = vtkSmartPointer<vtkRenderWindowInteractor>::New();
    vtkSmartPointer<myVtkInteractorStyleImage> mySagittalInteractor = vtkSmartPointer<myVtkInteractorStyleImage>::New();
 
-   //condifure myinteractorstyle
+   //configure myinteractorstyle
    mySagittalInteractor->SetImageViewer(sagittalViewer);
    mySagittalInteractor->SetStatusMapper(sagittalTextMapper);
 
@@ -198,27 +210,11 @@ int main(int argc, char* argv[])
    axialViewer->SetInputConnection(reader->GetOutputPort());
       //sets how to look at the slices by fixing the X and the Z axes
    axialViewer-> SetSliceOrientationToXZ(); 
+   vtkSmartPointer<vtkTextProperty> axialTextProp = vtkSmartPointer<vtkTextProperty>::New();
+   vtkSmartPointer<vtkTextMapper> axialTextMapper = vtkSmartPointer<vtkTextMapper>::New();
+   vtkSmartPointer<vtkActor2D> axialTextActor = vtkSmartPointer<vtkActor2D>::New();
 
-   
-
-      //status messages showing frame number
-         //text properties
-      vtkSmartPointer<vtkTextProperty> axialTextProp = vtkSmartPointer<vtkTextProperty>::New();
-      axialTextProp->SetFontFamilyToCourier();
-      axialTextProp->SetFontSize(20);
-      axialTextProp->SetVerticalJustificationToBottom();
-      axialTextProp->SetJustificationToLeft();
-         //actual text
-      vtkSmartPointer<vtkTextMapper> axialTextMapper = vtkSmartPointer<vtkTextMapper>::New();
-      std::string axMsg = StatusMessage::Format(axialViewer->GetSliceMin(), axialViewer->GetSliceMax());
-      axialTextMapper->SetInput(axMsg.c_str());
-      axialTextMapper->SetTextProperty(axialTextProp);
-         //puts creates actor to wrap the text onto the render frame
-      vtkSmartPointer<vtkActor2D> axialTextActor = vtkSmartPointer<vtkActor2D>::New();
-      axialTextActor->SetMapper(axialTextMapper);
-      axialTextActor->SetPosition(15,10);
-      //add text to viewer
-      axialViewer->GetRenderer()->AddActor2D(axialTextActor);
+   Setup::setupView(axialViewer, axialTextProp, axialTextMapper, axialTextActor);
 
    //create interactors
    vtkSmartPointer<vtkRenderWindowInteractor> axialInteractor = vtkSmartPointer<vtkRenderWindowInteractor>::New();
@@ -241,38 +237,25 @@ int main(int argc, char* argv[])
    vtkSmartPointer<vtkImageViewer2> coronalViewer = vtkSmartPointer<vtkImageViewer2>::New();
    coronalViewer->SetInputConnection(reader->GetOutputPort());
    coronalViewer-> SetSliceOrientationToYZ(); 
-   
+   vtkSmartPointer<vtkTextProperty> coronalTextProp = vtkSmartPointer<vtkTextProperty>::New();
+   vtkSmartPointer<vtkTextMapper> coronalTextMapper = vtkSmartPointer<vtkTextMapper>::New();
+   vtkSmartPointer<vtkActor2D> coronalTextActor = vtkSmartPointer<vtkActor2D>::New();
 
-      //status messages showing frame number
-         //text properties
-      vtkSmartPointer<vtkTextProperty> coronalTextProp = vtkSmartPointer<vtkTextProperty>::New();
-      coronalTextProp->SetFontFamilyToCourier();
-      coronalTextProp->SetFontSize(20);
-      coronalTextProp->SetVerticalJustificationToBottom();
-      coronalTextProp->SetJustificationToLeft();
-         //actual text
-      vtkSmartPointer<vtkTextMapper> coronalTextMapper = vtkSmartPointer<vtkTextMapper>::New();
-      std::string corMsg = StatusMessage::Format(coronalViewer->GetSliceMin(), coronalViewer->GetSliceMax());
-      coronalTextMapper->SetInput(corMsg.c_str());
-      coronalTextMapper->SetTextProperty(coronalTextProp);
-         //puts creates actor to wrap the text onto the render frame
-      vtkSmartPointer<vtkActor2D> coronalTextActor = vtkSmartPointer<vtkActor2D>::New();
-      coronalTextActor->SetMapper(coronalTextMapper);
-      coronalTextActor->SetPosition(15,10);
-      //add text to the viewer
-      coronalViewer->GetRenderer()->AddActor2D(coronalTextActor);
+   Setup::setupView(coronalViewer, coronalTextProp, coronalTextMapper, coronalTextActor);
+
 
    //create interactors
    vtkSmartPointer<vtkRenderWindowInteractor> coronalInteractor = vtkSmartPointer<vtkRenderWindowInteractor>::New();
    vtkSmartPointer<myVtkInteractorStyleImage> myCoronalInteractor = vtkSmartPointer<myVtkInteractorStyleImage>::New();
 
-   //condifure myinteractorstyle
+   //configure myinteractorstyle
    myCoronalInteractor->SetImageViewer(coronalViewer);
    myCoronalInteractor->SetStatusMapper(coronalTextMapper);
 
    //setup interactor
    coronalViewer->SetupInteractor(coronalInteractor);
    coronalInteractor->SetInteractorStyle(myCoronalInteractor);
+
    //render
    coronalViewer->GetRenderer()->ResetCamera();
    coronalViewer->Render();
@@ -316,16 +299,16 @@ int main(int argc, char* argv[])
   renderWindowInteractor->SetInteractorStyle(interactorStyle);
   renderWindowInteractor->SetRenderWindow(renderWindow);
 
-  //volumeMapper->SetBlendModeToAdditive();
+  //volumeMapper->SetBlendModeToAverageIntensity();
   volumeMapper->SetRequestedRenderModeToGPU();
   volumeMapper->SetInputData(imageData);
 
   //volumeProperty->ShadeOn();
   volumeProperty->SetInterpolationTypeToLinear();
 
-  //volumeProperty->SetAmbient(0.1);
-  //volumeProperty->SetDiffuse(0.001);
-  //volumeProperty->SetSpecular(0.9);
+  //volumeProperty->SetAmbient(1.0);
+  //volumeProperty->SetDiffuse(0.0);
+  //volumeProperty->SetSpecular(0.0);
   //volumeProperty->SetSpecularPower(1.0);
 
   gradientOpacity->AddPoint(99.0, .3);
@@ -335,19 +318,21 @@ int main(int argc, char* argv[])
 
   scalarOpacity->AddPoint(0, -0.01);
   scalarOpacity->AddPoint(74, .00);
-  scalarOpacity->AddPoint(75.0, 1);
+  scalarOpacity->AddPoint(100.0, .05);
   scalarOpacity->AddPoint(3000.0, 1);
+  volumeProperty->SetScalarOpacityUnitDistance(5);
   volumeProperty->SetScalarOpacity(scalarOpacity);
 
 
-  color->AddRGBPoint(100.0, 0.5, .5,0.5);
+
+  color->AddRGBPoint(100.0, 0.5, 0.5, 0.5);
   volumeProperty->SetColor(color);
 
   volume->SetMapper(volumeMapper);
   volume->SetProperty(volumeProperty);
   renderer->AddVolume(volume);
+  
   renderer->ResetCamera();
-
   renderWindow->Render();
   renderWindow->SetPosition(700,0);
   renderWindow->SetWindowName("3D Render");
