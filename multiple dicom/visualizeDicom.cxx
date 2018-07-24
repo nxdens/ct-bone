@@ -60,6 +60,61 @@ protected:
    }
    
 };
+
+
+class grabBuffer : public vtkInteractorStyleTrackballCamera
+{
+   public:
+      static grabBuffer * New();
+      vtkTypeMacro(grabBuffer, vtkInteractorStyleTrackballCamera);
+      unsigned char* matrix;
+
+   protected:
+      vtkRenderWindow * _renderWindow;
+      int height;
+      int width;
+      const char rgba = 4;
+      
+   public:
+      void SetWindow(vtkRenderWindow* window)
+      {
+         _renderWindow = window;
+         int* dim = window->GetSize();
+         height = dim[0]-1;
+         width = dim[1]-1;
+         cout <<"height: " << height+1 <<"\t width = " << width+1 << endl;
+      }
+      
+   protected:
+      int captureBuffer(unsigned char * mat)
+      {
+         mat = _renderWindow->GetRGBACharPixelData(0,0,height,width,true);
+         unsigned char * n = mat;
+         while(*n!=NULL)
+         {
+            cout<<*n<< " ";
+            n++;
+         }
+         return 1;
+      }
+
+      virtual void OnKeyPress()
+      {
+         vtkRenderWindowInteractor * rwi = this->Interactor;
+
+         std::string key = rwi->GetKeySym();
+         cout << "Pressed: "<< key << endl;
+         if(key == "c")
+         {
+            captureBuffer(matrix);
+            cout <<"height: " << height+1 <<"\t width = " << width+1 << endl;
+            int length = sizeof(matrix)/sizeof(*matrix);
+            cout << length << endl;
+         }
+      }
+};
+
+vtkStandardNewMacro(grabBuffer);
  
 // Define own interaction style
 class myVtkInteractorStyleImage : public vtkInteractorStyleImage
@@ -280,7 +335,7 @@ int main(int argc, char* argv[])
    vtkSmartPointer<vtkImageData> imageData = vtkSmartPointer<vtkImageData>::New();
    vtkSmartPointer<vtkRenderWindow> renderWindow = vtkSmartPointer<vtkRenderWindow>::New();
    vtkSmartPointer<vtkRenderer> renderer = vtkSmartPointer<vtkRenderer>::New();
-   vtkSmartPointer<vtkInteractorStyleTrackballCamera> interactorStyle = vtkSmartPointer<vtkInteractorStyleTrackballCamera>::New();
+   vtkSmartPointer<grabBuffer> interactorStyle = vtkSmartPointer<grabBuffer>::New();
    vtkSmartPointer<vtkRenderWindowInteractor> renderWindowInteractor = vtkSmartPointer<vtkRenderWindowInteractor>::New();
    vtkSmartPointer<vtkSmartVolumeMapper> volumeMapper = vtkSmartPointer<vtkSmartVolumeMapper>::New();
    vtkSmartPointer<vtkVolumeProperty> volumeProperty = vtkSmartPointer<vtkVolumeProperty>::New();
@@ -293,52 +348,47 @@ int main(int argc, char* argv[])
    
    //renderer->SetBackground(0.1, 0.2, 0.3);
 
-  renderWindow->AddRenderer(renderer);
-  renderWindow->SetSize(500, 500);
+   renderWindow->AddRenderer(renderer);
+   renderWindow->SetSize(500, 500);
+   int * dims = renderWindow->GetSize();
+   cout <<"height: " << dims[0] <<"\t width = " << dims[1] << endl;
+   renderWindowInteractor->SetInteractorStyle(interactorStyle);
+   renderWindowInteractor->SetRenderWindow(renderWindow);
 
-  renderWindowInteractor->SetInteractorStyle(interactorStyle);
-  renderWindowInteractor->SetRenderWindow(renderWindow);
+   volumeMapper->SetBlendModeToComposite();
+   volumeMapper->SetRequestedRenderModeToGPU();
+   volumeMapper->SetInputData(imageData);
 
-  //volumeMapper->SetBlendModeToAverageIntensity();
-  volumeMapper->SetRequestedRenderModeToGPU();
-  volumeMapper->SetInputData(imageData);
+   volumeProperty->SetInterpolationTypeToLinear();
+   gradientOpacity->AddPoint(99,0);
+   gradientOpacity->AddPoint(100,1);
+   volumeProperty->SetGradientOpacity(gradientOpacity);
 
-  //volumeProperty->ShadeOn();
-  volumeProperty->SetInterpolationTypeToLinear();
-
-  //volumeProperty->SetAmbient(1.0);
-  //volumeProperty->SetDiffuse(0.0);
-  //volumeProperty->SetSpecular(0.0);
-  //volumeProperty->SetSpecularPower(1.0);
-
-  gradientOpacity->AddPoint(99.0, .3);
-  gradientOpacity->AddPoint(100.0, 1.0);
-  //gradientOpacity->AddPoint(3000.0,0);
-  //volumeProperty->SetGradientOpacity(gradientOpacity);
-
-  scalarOpacity->AddPoint(0, -0.01);
-  scalarOpacity->AddPoint(74, .00);
-  scalarOpacity->AddPoint(100.0, .05);
-  scalarOpacity->AddPoint(3000.0, 1);
-  volumeProperty->SetScalarOpacityUnitDistance(5);
-  volumeProperty->SetScalarOpacity(scalarOpacity);
+   scalarOpacity->AddPoint(0, -0.01);
+   scalarOpacity->AddPoint(100, .00);
+   scalarOpacity->AddPoint(110.01, .05);
+   scalarOpacity->AddPoint(3000.0, .05);
+   volumeProperty->SetScalarOpacityUnitDistance(.05);
+   volumeProperty->SetScalarOpacity(scalarOpacity);
 
 
 
-  color->AddRGBPoint(100.0, 0.5, 0.5, 0.5);
-  volumeProperty->SetColor(color);
+   color->AddRGBPoint(100.0, 0.5, 0.5, 0.5);
+   volumeProperty->SetColor(color);
+   volume->SetMapper(volumeMapper);
+   volume->SetProperty(volumeProperty);
+   renderer->AddVolume(volume);
 
-  volume->SetMapper(volumeMapper);
-  volume->SetProperty(volumeProperty);
-  renderer->AddVolume(volume);
+   renderer->ResetCamera();
+   renderWindow->Render();
+   renderWindow->SetPosition(700,0);
+   renderWindow->SetWindowName("3D Render");
+   interactorStyle->SetWindow(renderWindow);
   
-  renderer->ResetCamera();
-  renderWindow->Render();
-  renderWindow->SetPosition(700,0);
-  renderWindow->SetWindowName("3D Render");
-  
+
 
    coronalInteractor->Start();
+
 
 
    return EXIT_SUCCESS;
