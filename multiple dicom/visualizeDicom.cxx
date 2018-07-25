@@ -28,6 +28,8 @@
 #include <vtkPiecewiseFunction.h>
 #include <vtkColorTransferFunction.h>
 
+#include <vtkOpenGLRenderWindow.h>
+
 // helper class to format slice status message
 class StatusMessage {
 public:
@@ -74,7 +76,7 @@ class grabBuffer : public vtkInteractorStyleTrackballCamera
       int height;
       int width;
       const char rgba = 4;
-      
+
    public:
       void SetWindow(vtkRenderWindow* window)
       {
@@ -86,16 +88,25 @@ class grabBuffer : public vtkInteractorStyleTrackballCamera
       }
       
    protected:
-      int captureBuffer(unsigned char * mat)
+      void captureBuffer(unsigned char * mat)
       {
-         mat = _renderWindow->GetRGBACharPixelData(0,0,height,width,true);
-         unsigned char * n = mat;
-         while(*n!=NULL)
+         //_renderWindow->Render();
+         mat = _renderWindow->GetPixelData(0,0,height,width,true);
+         int p = 0;
+         /*for(int i =0; i<(1+height)*(1+width);i+=3)//its greyscale so we only need one of the rgb values
          {
-            cout<<*n<< " ";
-            n++;
+            if(mat[i] != NULL)
+            {
+               cout << (int)mat[i];
+               p++;
+               if((i+1)%3 == 0)
+               {
+                  cout<<endl;
+               }
+            }
+            
          }
-         return 1;
+         cout<<endl<<p;*/
       }
 
       virtual void OnKeyPress()
@@ -107,9 +118,6 @@ class grabBuffer : public vtkInteractorStyleTrackballCamera
          if(key == "c")
          {
             captureBuffer(matrix);
-            cout <<"height: " << height+1 <<"\t width = " << width+1 << endl;
-            int length = sizeof(matrix)/sizeof(*matrix);
-            cout << length << endl;
          }
       }
 };
@@ -152,7 +160,7 @@ protected:
          _ImageViewer->SetSlice(_Slice);
          std::string msg = StatusMessage::Format(_Slice, _MaxSlice);
          _StatusMapper->SetInput(msg.c_str());
-         _ImageViewer->Render();
+         _ImageViewer->Render();         
       }
    }
  
@@ -314,6 +322,7 @@ int main(int argc, char* argv[])
    //render
    coronalViewer->GetRenderer()->ResetCamera();
    coronalViewer->Render();
+
    //end coronal initialization
 
    //configuring window properties
@@ -329,7 +338,14 @@ int main(int argc, char* argv[])
    //organize windows
    coronalViewer->GetRenderWindow()->SetPosition(400,0);
    axialViewer->GetRenderWindow()->SetPosition(400,275);
-
+   sagittalViewer->Render();
+   unsigned char* mat = sagittalViewer->GetRenderWindow()->GetPixelData(0,0,399,499,false);
+   int i =0;
+   while(mat[i] != NULL)
+   {
+      i++;
+   }
+   cout<<i<<endl;
    //setup for 3d render 
    //needs to be cleaned up
    vtkSmartPointer<vtkImageData> imageData = vtkSmartPointer<vtkImageData>::New();
@@ -344,14 +360,18 @@ int main(int argc, char* argv[])
    vtkSmartPointer<vtkColorTransferFunction> color = vtkSmartPointer<vtkColorTransferFunction>::New();
    vtkSmartPointer<vtkVolume> volume = vtkSmartPointer<vtkVolume>::New();
 
+   //testing gl stuff
+   //vtkOpenGLRenderWindow* glRenderWindow = vtkOpenGLRenderWindow::SafeDownCast(renderWindow);
+
+    //glRenderWindow->SetUseOffScreenBuffers(true);
+
    imageData->ShallowCopy(reader->GetOutput());
    
    //renderer->SetBackground(0.1, 0.2, 0.3);
 
    renderWindow->AddRenderer(renderer);
    renderWindow->SetSize(500, 500);
-   int * dims = renderWindow->GetSize();
-   cout <<"height: " << dims[0] <<"\t width = " << dims[1] << endl;
+   //renderWindow->SetMultiSamples(0);
    renderWindowInteractor->SetInteractorStyle(interactorStyle);
    renderWindowInteractor->SetRenderWindow(renderWindow);
 
@@ -362,7 +382,7 @@ int main(int argc, char* argv[])
    volumeProperty->SetInterpolationTypeToLinear();
    gradientOpacity->AddPoint(99,0);
    gradientOpacity->AddPoint(100,1);
-   volumeProperty->SetGradientOpacity(gradientOpacity);
+   //volumeProperty->SetGradientOpacity(gradientOpacity);
 
    scalarOpacity->AddPoint(0, -0.01);
    scalarOpacity->AddPoint(100, .00);
@@ -372,9 +392,9 @@ int main(int argc, char* argv[])
    volumeProperty->SetScalarOpacity(scalarOpacity);
 
 
-
+   color->AddRGBPoint(-100,0,0,0);
    color->AddRGBPoint(100.0, 0.5, 0.5, 0.5);
-   volumeProperty->SetColor(color);
+   //volumeProperty->SetColor(color);
    volume->SetMapper(volumeMapper);
    volume->SetProperty(volumeProperty);
    renderer->AddVolume(volume);
@@ -383,9 +403,19 @@ int main(int argc, char* argv[])
    renderWindow->Render();
    renderWindow->SetPosition(700,0);
    renderWindow->SetWindowName("3D Render");
-   interactorStyle->SetWindow(renderWindow);
-  
+   //GetRGBACharPixelvalue is finnicky idk what conditions need to be met for this to work
+      /*1 main issue (7/24) :
+         1. Still cant get framebuffer using getpixeldataq
+         resolved 7/25 there was never a problem the array is just filled with a lot of null values so you just need to know how many data points there are
+      */
+   int * dim = renderWindow->GetSize();
+   unsigned char* pixels = renderWindow->GetPixelData(0,0,dim[0]-1,dim[1]-1,true);
 
+   interactorStyle->SetWindow(renderWindow);
+
+   unsigned char * ah = axialViewer->GetRenderWindow()->GetRGBACharPixelData(0,0,40,40,true);
+   cout << sizeof(ah)/sizeof(*ah) << endl;
+   //unsigned int buffer = renderWindow->GetFrontBuffer();
 
    coronalInteractor->Start();
 
