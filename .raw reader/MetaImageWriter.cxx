@@ -113,34 +113,41 @@ int main(int argc, char * argv[])
       return EXIT_FAILURE;
    }
 
- 
+   /*
+   Problems:
+      1. I want to use the image reader so we dont need the header file since most of the information is in the filename
+      2. with meta reader all the values are either white or black no inbetween
+      3. why are there 4 images none of the parameters in the header file change that much except spacing changes the scale of the images
+      4. if we have to use meta reader then I would need to generate the header file for each of the images
+   */
    // Read and display file for verification that it was written correctly
 
   
-  vtkSmartPointer<vtkMetaImageReader> reader = vtkSmartPointer<vtkMetaImageReader>::New();
+  vtkSmartPointer<vtkImageReader2> reader = vtkSmartPointer<vtkImageReader2>::New();
    reader->SetFileName(argv[1]);
-   /*reader->SetDataExtent(1, 129, 1, 142, 1, 177);
+   reader->SetDataExtent(0, 128, 0, 141, 0, 176);
    reader->SetDataSpacing(1,1,1);
-   reader->SetDataOrigin(0.0, 0.0, 0.0);
-   reader->SetDataScalarTypeToUnsignedInt();
+   reader->SetDataScalarTypeToUnsignedShort();
    reader->SetFileDimensionality(3);
    reader->SetDataByteOrderToLittleEndian();
-   //reader->SetNumberOfScalarComponents(2);*/
+   //reader->SetNumberOfScalarComponents(2);
    reader->Update();
 
    vtkSmartPointer<vtkImageViewer2> imageViewer = vtkSmartPointer<vtkImageViewer2>::New();
    imageViewer->SetInputConnection(reader->GetOutputPort());
    imageViewer->GetRenderer()->ResetCamera();
-   //imageViewer->SetSlice(0);
+   //imageViewer->SetSlice(1);
    imageViewer->Render();
-   
+   imageViewer->GetRenderer()->SetBackground(.2,.2,0);
+   imageViewer->GetRenderer()->ResetCamera();
+
    vtkSmartPointer<vtkRenderWindowInteractor> interactor = vtkSmartPointer<vtkRenderWindowInteractor>::New();
    vtkSmartPointer<myVtkInteractorStyleImage> myStyle = vtkSmartPointer<myVtkInteractorStyleImage>::New();
    myStyle->SetImageViewer(imageViewer);
    imageViewer->SetupInteractor(interactor);
    interactor->SetInteractorStyle(myStyle);
 
-   /*vtkSmartPointer<vtkImageData> imageData = vtkSmartPointer<vtkImageData>::New();
+   vtkSmartPointer<vtkImageData> imageData = vtkSmartPointer<vtkImageData>::New();
    vtkSmartPointer<vtkRenderWindow> renderWindow = vtkSmartPointer<vtkRenderWindow>::New();
    vtkSmartPointer<vtkRenderer> renderer = vtkSmartPointer<vtkRenderer>::New();
    vtkSmartPointer<vtkInteractorStyleTrackballCamera> interactorStyle = vtkSmartPointer<vtkInteractorStyleTrackballCamera>::New();
@@ -186,7 +193,7 @@ int main(int argc, char * argv[])
 
    color->AddRGBPoint(-100,0,0,0);
    color->AddRGBPoint(100.0, 0.5, 0.5, 0.5);
-   volumeProperty->SetColor(color);
+   //volumeProperty->SetColor(color);
    volume->SetMapper(volumeMapper);
    volume->SetProperty(volumeProperty);
    renderer->AddVolume(volume);
@@ -195,7 +202,7 @@ int main(int argc, char * argv[])
    renderWindow->Render();
    renderWindow->SetPosition(700,0);
    renderWindow->SetWindowName("3D Render");
-*/
+
    interactor->Start();
  
    return EXIT_SUCCESS;
