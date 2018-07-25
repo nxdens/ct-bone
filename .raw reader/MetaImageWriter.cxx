@@ -123,13 +123,8 @@ int main(int argc, char * argv[])
    // Read and display file for verification that it was written correctly
 
   
-  vtkSmartPointer<vtkImageReader2> reader = vtkSmartPointer<vtkImageReader2>::New();
+  vtkSmartPointer<vtkMetaImageReader> reader = vtkSmartPointer<vtkMetaImageReader>::New();
    reader->SetFileName(argv[1]);
-   reader->SetDataExtent(0, 128, 0, 141, 0, 176);
-   reader->SetDataSpacing(1,1,1);
-   reader->SetDataScalarTypeToUnsignedShort();
-   reader->SetFileDimensionality(3);
-   reader->SetDataByteOrderToLittleEndian();
    //reader->SetNumberOfScalarComponents(2);
    reader->Update();
 
