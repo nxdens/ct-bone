@@ -144,9 +144,11 @@ class grabBuffer : public vtkInteractorStyleTrackballCamera
                if(matrix[(j*(width+1)+i)*3] != NULL)
                {
                   //cout << matrix[(j*(width+1)+i)*3] << " ";
+                  //set different values to 0 to give different hue to the image 
+                  //still need to figure out how to add opacity to the image
                   pixel[0] = matrix[(j*(width+1)+i)*3];
-                  pixel[1] = matrix[(j*(width+1)+i)*3];
-                  pixel[2] = matrix[(j*(width+1)+i)*3];
+                  pixel[1] = 0;
+                  pixel[2] = 0;
                }
                else
                {
