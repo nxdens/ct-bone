@@ -71,7 +71,7 @@ protected:
  
    virtual void OnKeyDown() {
       std::string key = this->GetInteractor()->GetKeySym();
-      cout <<_Slice<<endl;
+      //cout <<_Slice<<endl;
       if(key.compare("Up") == 0) {
          //cout << "Up arrow key was pressed." << endl;
          MoveSliceForward();
@@ -113,6 +113,7 @@ class grabBuffer : public vtkInteractorStyleTrackballCamera
       static grabBuffer * New();
       vtkTypeMacro(grabBuffer, vtkInteractorStyleTrackballCamera);
       unsigned char* matrix;
+      vtkSmartPointer<vtkImageViewer2> view;
 
    protected:
       vtkRenderWindow * _renderWindow;
@@ -129,6 +130,13 @@ class grabBuffer : public vtkInteractorStyleTrackballCamera
          width = dim[1]-1;
          cout <<"height: " << height+1 <<"\t width = " << width+1 << endl;
          matrix = new unsigned char[dim[0]*dim[1]*3+1];
+         view =  vtkSmartPointer<vtkImageViewer2>::New();
+         vtkSmartPointer<vtkRenderWindowInteractor> inter = vtkSmartPointer<vtkRenderWindowInteractor>::New();
+         vtkSmartPointer<vtkImageData> im = vtkSmartPointer<vtkImageData>::New();
+         view->SetInputData(im);
+         view->Render();
+         view->SetupInteractor(inter);
+         inter->Start();
       }
       void setImageData(vtkImageData * im)
       {
@@ -169,13 +177,11 @@ class grabBuffer : public vtkInteractorStyleTrackballCamera
          vtkSmartPointer<vtkImageData> im = vtkSmartPointer<vtkImageData>::New();
          setImageData(im);
          
-         vtkSmartPointer<vtkImageViewer2> view = vtkSmartPointer<vtkImageViewer2>::New();
+         
          view->SetInputData(im);
          view->GetRenderer()->ResetCamera();
          view->Render();
-         vtkSmartPointer<vtkRenderWindowInteractor> inter = vtkSmartPointer<vtkRenderWindowInteractor>::New();
-         view->SetupInteractor(inter);
-         inter->Start();
+         
       }
    protected:
       void captureBuffer()
@@ -198,7 +204,7 @@ class grabBuffer : public vtkInteractorStyleTrackballCamera
          vtkRenderWindowInteractor * rwi = this->Interactor;
 
          std::string key = rwi->GetKeySym();
-         cout << "Pressed: "<< key << endl;
+         //cout << "Pressed: "<< key << endl;
          if(key == "c")
          {
             captureBuffer();
@@ -274,7 +280,7 @@ int main(int argc, char * argv[])
    renderWindowInteractor->SetInteractorStyle(interactorStyle);
    renderWindowInteractor->SetRenderWindow(renderWindow);
 
-   volumeMapper->SetBlendModeToComposite();
+   volumeMapper->SetBlendModeToAdditive();
    volumeMapper->SetRequestedRenderModeToGPU();
    volumeMapper->SetInputData(imageData);
 
@@ -287,13 +293,9 @@ int main(int argc, char * argv[])
    scalarOpacity->AddPoint(100, .00);
    scalarOpacity->AddPoint(110.01, .05);
    scalarOpacity->AddPoint(3000.0, .05);
-   volumeProperty->SetScalarOpacityUnitDistance(.05);
+   volumeProperty->SetScalarOpacityUnitDistance(1);
    volumeProperty->SetScalarOpacity(scalarOpacity);
 
-
-   color->AddRGBPoint(-100,0,0,0);
-   color->AddRGBPoint(100.0, 0.5, 0.5, 0.5);
-   //volumeProperty->SetColor(color);
    volume->SetMapper(volumeMapper);
    volume->SetProperty(volumeProperty);
    renderer->AddVolume(volume);
