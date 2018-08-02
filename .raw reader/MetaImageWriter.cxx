@@ -25,6 +25,9 @@
 #include <vtkUnsignedCharArray.h>
 #include <vtkPointData.h>
 #include <vtkActor2D.h>
+#include <vtkPNGReader.h>
+#include <vtkDataSetMapper.h>
+#include <vtkImageBlend.h>
  
 class myVtkInteractorStyleImage : public vtkInteractorStyleImage
 {
@@ -113,8 +116,9 @@ class grabBuffer : public vtkInteractorStyleTrackballCamera
       static grabBuffer * New();
       vtkTypeMacro(grabBuffer, vtkInteractorStyleTrackballCamera);
       unsigned char* matrix;
-      vtkSmartPointer<vtkImageViewer2> view;
-
+      vtkSmartPointer<vtkImageBlend> blend;
+      vtkSmartPointer<vtkImageViewer2> imageViewer;
+      vtkSmartPointer<vtkPNGReader> background;
    protected:
       vtkRenderWindow * _renderWindow;
       int height;
@@ -130,13 +134,22 @@ class grabBuffer : public vtkInteractorStyleTrackballCamera
          width = dim[1]-1;
          cout <<"height: " << height+1 <<"\t width = " << width+1 << endl;
          matrix = new unsigned char[dim[0]*dim[1]*3+1];
-         view =  vtkSmartPointer<vtkImageViewer2>::New();
-         vtkSmartPointer<vtkRenderWindowInteractor> inter = vtkSmartPointer<vtkRenderWindowInteractor>::New();
-         vtkSmartPointer<vtkImageData> im = vtkSmartPointer<vtkImageData>::New();
-         view->SetInputData(im);
-         view->Render();
-         view->SetupInteractor(inter);
-         inter->Start();
+         //set background image
+         background = vtkSmartPointer<vtkPNGReader>::New();
+         background->SetFileName("background.png");
+
+
+
+         // Display the result
+         vtkSmartPointer<vtkRenderWindowInteractor> renderWindowInteractor = vtkSmartPointer<vtkRenderWindowInteractor>::New();
+
+         imageViewer = vtkSmartPointer<vtkImageViewer2>::New();
+         imageViewer->SetInputConnection(background->GetOutputPort());
+         imageViewer->SetupInteractor(renderWindowInteractor);
+         imageViewer->GetRenderer()->ResetCamera();
+
+         renderWindowInteractor->Initialize();
+         renderWindowInteractor->Start();
       }
       void setImageData(vtkImageData * im)
       {
@@ -170,17 +183,18 @@ class grabBuffer : public vtkInteractorStyleTrackballCamera
       }
       void visualizeBuffer()
       {
-         for(int i =0;i<(height+1)*(width+1);i+=3)
-         {
-            //cout<< (char)matrix[i] << " ";
-         }
          vtkSmartPointer<vtkImageData> im = vtkSmartPointer<vtkImageData>::New();
          setImageData(im);
-         
-         
-         view->SetInputData(im);
-         view->GetRenderer()->ResetCamera();
-         view->Render();
+
+         blend = vtkSmartPointer<vtkImageBlend>::New();
+         blend->AddInputData(im);
+         blend->AddInputConnection(background->GetOutputPort());
+         blend->SetOpacity(0,.5);
+         blend->SetOpacity(1,.5);
+
+         imageViewer->SetInputConnection(blend->GetOutputPort());
+         imageViewer->GetRenderer()->ResetCamera();
+         imageViewer->Render();
          
       }
    protected:
