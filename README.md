@@ -9,6 +9,7 @@ VTK, OpenCV, Graphics card
 ## To-do: 
 1. Get tiff reader working for the weird header
 2. Do math to lock camera distance from the render for size
+  . now that it is locked we need to figure out the math to get all the sizing correct
 3. Get gradient kernel
 4. get some sort of metric
 5. Get second camera working to layer it over the corresponding camera view
