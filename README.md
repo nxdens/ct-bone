@@ -4,6 +4,7 @@ VTK, OpenCV, Graphics card
 ## Issues: 
 1. Tiff reader not yet working due to weird header for vtk
 2. speed of framebuffer better but I think we can still make it faster
+3. Not fully utilizing the graphics card for the computations which could be why some of the rotating is slower
 
 ## To-do: 
 1. Get tiff reader working for the weird header
