@@ -28,6 +28,8 @@
 #include <vtkPNGReader.h>
 #include <vtkDataSetMapper.h>
 #include <vtkImageBlend.h>
+#include <vtkCamera.h>
+#include <vtkTransform.h>
  
 class myVtkInteractorStyleImage : public vtkInteractorStyleImage
 {
@@ -146,6 +148,7 @@ class grabBuffer : public vtkInteractorStyleTrackballCamera
          imageViewer = vtkSmartPointer<vtkImageViewer2>::New();
          imageViewer->SetInputConnection(background->GetOutputPort());
          imageViewer->SetupInteractor(renderWindowInteractor);
+         imageViewer->SetSize(500,500);
          imageViewer->GetRenderer()->ResetCamera();
 
          renderWindowInteractor->Initialize();
@@ -187,10 +190,12 @@ class grabBuffer : public vtkInteractorStyleTrackballCamera
          setImageData(im);
 
          blend = vtkSmartPointer<vtkImageBlend>::New();
+         //blend->SetBlendModeToCompound();
          blend->AddInputData(im);
          blend->AddInputConnection(background->GetOutputPort());
-         blend->SetOpacity(0,.5);
-         blend->SetOpacity(1,.5);
+         
+         blend->SetOpacity(0, .5);
+         blend->SetOpacity(1,.75);
 
          imageViewer->SetInputConnection(blend->GetOutputPort());
          imageViewer->GetRenderer()->ResetCamera();
@@ -201,16 +206,6 @@ class grabBuffer : public vtkInteractorStyleTrackballCamera
       void captureBuffer()
       {
          matrix = _renderWindow->GetPixelData(0,0,height,width,true);
-         /*for(int i = 0 ; i<=height;i++)
-         {
-            for(int j = 0; j<=width;j++)
-            {
-               if(matrix[(i*(width+1)+j)*3] != NULL)
-               {
-                  cout << matrix[(i*(width+1)+j)*3] << " ";
-               }
-            }
-         }*/
          visualizeBuffer();
       }
       virtual void OnKeyPress()
@@ -225,12 +220,14 @@ class grabBuffer : public vtkInteractorStyleTrackballCamera
          }
          vtkInteractorStyleTrackballCamera::OnKeyPress();
       }
+
 };
 
 vtkStandardNewMacro(grabBuffer);
 
 int main(int argc, char * argv[])
 {
+   float scale = (.79/.682);
    // adapt path !
    if(argc < 2)
    {
@@ -253,19 +250,19 @@ int main(int argc, char * argv[])
    //reader->SetNumberOfScalarComponents(2);
    reader->Update();
 
-   vtkSmartPointer<vtkImageViewer2> imageViewer = vtkSmartPointer<vtkImageViewer2>::New();
+   /*vtkSmartPointer<vtkImageViewer2> imageViewer = vtkSmartPointer<vtkImageViewer2>::New();
    imageViewer->SetInputConnection(reader->GetOutputPort());
    imageViewer->GetRenderer()->ResetCamera();
    //imageViewer->SetSlice(1);
    imageViewer->Render();
-   imageViewer->GetRenderer()->SetBackground(.2,.2,0);
+   imageViewer->GetRenderer()->SetBackground(0,0,0);
    imageViewer->GetRenderer()->ResetCamera();
 
    vtkSmartPointer<vtkRenderWindowInteractor> interactor = vtkSmartPointer<vtkRenderWindowInteractor>::New();
    vtkSmartPointer<myVtkInteractorStyleImage> myStyle = vtkSmartPointer<myVtkInteractorStyleImage>::New();
    myStyle->SetImageViewer(imageViewer);
    imageViewer->SetupInteractor(interactor);
-   interactor->SetInteractorStyle(myStyle);
+   interactor->SetInteractorStyle(myStyle);*/
 
    vtkSmartPointer<vtkImageData> imageData = vtkSmartPointer<vtkImageData>::New();
    vtkSmartPointer<vtkRenderWindow> renderWindow = vtkSmartPointer<vtkRenderWindow>::New();
@@ -278,6 +275,7 @@ int main(int argc, char * argv[])
    vtkSmartPointer<vtkPiecewiseFunction> scalarOpacity = vtkSmartPointer<vtkPiecewiseFunction>::New();
    vtkSmartPointer<vtkColorTransferFunction> color = vtkSmartPointer<vtkColorTransferFunction>::New();
    vtkSmartPointer<vtkVolume> volume = vtkSmartPointer<vtkVolume>::New();
+   vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
 
    //testing gl stuff
    //vtkOpenGLRenderWindow* glRenderWindow = vtkOpenGLRenderWindow::SafeDownCast(renderWindow);
@@ -290,11 +288,10 @@ int main(int argc, char * argv[])
 
    renderWindow->AddRenderer(renderer);
    renderWindow->SetSize(500, 500);
-   //renderWindow->SetMultiSamples(0);
    renderWindowInteractor->SetInteractorStyle(interactorStyle);
    renderWindowInteractor->SetRenderWindow(renderWindow);
 
-   volumeMapper->SetBlendModeToAdditive();
+   volumeMapper->SetBlendModeToComposite();
    volumeMapper->SetRequestedRenderModeToGPU();
    volumeMapper->SetInputData(imageData);
 
@@ -307,20 +304,37 @@ int main(int argc, char * argv[])
    scalarOpacity->AddPoint(100, .00);
    scalarOpacity->AddPoint(110.01, .05);
    scalarOpacity->AddPoint(3000.0, .05);
-   volumeProperty->SetScalarOpacityUnitDistance(1);
+   volumeProperty->SetScalarOpacityUnitDistance(.05);
    volumeProperty->SetScalarOpacity(scalarOpacity);
 
    volume->SetMapper(volumeMapper);
    volume->SetProperty(volumeProperty);
+   transform->PostMultiply();
+   transform->Scale(scale,scale,scale);
+   volume->SetUserTransform(transform);
    renderer->AddVolume(volume);
 
    renderer->ResetCamera();
+   renderer->GetActiveCamera()->SetViewAngle(12.94964);
+
+   double * pos = new double[3];
+   renderer->GetActiveCamera()->GetPosition(pos);
+   pos[2] += 1782/.79;
+   //cout << pos[2];
+   renderer->GetActiveCamera()->SetPosition(pos);
+
+   double * foc = new double[3];
+   foc = renderer->GetActiveCamera()->GetFocalPoint();
+   for(int i = 0; i<3;i++)
+   {
+      cout << foc[0] << " ";
+   }
    renderWindow->Render();
+   renderWindow->SetPosition(500,0);
    interactorStyle->SetWindow(renderWindow);
-   renderWindow->SetPosition(700,0);
    renderWindow->SetWindowName("3D Render");
 
-   interactor->Start();
+   renderWindowInteractor->Start();
  
    return EXIT_SUCCESS;
 }
