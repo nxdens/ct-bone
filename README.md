@@ -16,3 +16,4 @@ VTK, OpenCV, Graphics card
 6. write some sort of a header file format for all of this to automate it
 7. Improve the speed of the spinning
 8. Improve the blending of the image to not blend the black from the ct bone
+9. make everthing 64 bit
