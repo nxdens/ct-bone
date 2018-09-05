@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.9.5)
 project(ImageReader)
 
 find_package(ITK REQUIRED)
+
 include(${ITK_USE_FILE})
 if(ITKVtkGlue_LOADED)
 	find_package(VTK REQUIRED)
@@ -13,7 +14,7 @@ if(ITKVtkGlue_LOADED)
   	set(Glue ItkVtkGlue)
 
 endif()
-
+find_package( OpenCV REQUIRED )
 add_executable(ImageReader MACOSX_BUNDLE ImageReader.cxx)
 target_link_libraries(ImageReader
-  ${Glue}  ${VTK_LIBRARIES} ${ITK_LIBRARIES})
+  ${Glue}  ${VTK_LIBRARIES} ${ITK_LIBRARIES} ${OpenCV_LIBS})
