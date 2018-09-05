@@ -1,5 +1,5 @@
 ## Dependencies: 
-VTK, OpenCV, Graphics card, ITK
+VTK, OpenCV, Graphics card, ITK, ITKVTKGlue
 
 ## Issues: 
 1. Tiff reader not yet working due to weird header for vtk
