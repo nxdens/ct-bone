@@ -24,8 +24,10 @@
 //image processing includes
 #include "vtkImageGaussianSmooth.h"
 
+//opencv includes
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#include "opencv2/imgproc/imgproc.hpp"
 
 #include <vtkImageFlip.h>
 #include "QuickView.h"
@@ -38,6 +40,7 @@ class grabBuffer : public vtkInteractorStyleTrackballCamera
 		static grabBuffer * New();
 		vtkTypeMacro(grabBuffer, vtkInteractorStyleTrackballCamera);
 		unsigned char* matrix;
+		unsigned char* back;
 		vtkSmartPointer<vtkImageBlend> blend;
 		vtkSmartPointer<vtkImageViewer2> imageViewer;
 		vtkSmartPointer<vtkImageData> data;
@@ -76,8 +79,8 @@ class grabBuffer : public vtkInteractorStyleTrackballCamera
 					//set different values to 0 to give different hue to the image 
 					//still need to figure out how to add opacity to the image
 					pixel[0] = matrix[(j*(width+1)+i)*3];
-					pixel[1] = 0;
-					pixel[2] = 0;
+					pixel[1] = matrix[(j*(width+1)+i)*3];
+					pixel[2] = matrix[(j*(width+1)+i)*3];
 				   }
 				   else
 				   {
@@ -88,16 +91,44 @@ class grabBuffer : public vtkInteractorStyleTrackballCamera
 				}
 			}
 			im->Modified();
-			im->SetInputData(matrix);
+			//im->SetInputData(matrix);//aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaahhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh why doesnt this just work
 		}
 		void blur(vtkImageData* data)//this blocks everthing but mostly because of the imageviewer2 just get rid of the visualization to fix that 
 		{
-			vtkSmartPointer<vtkImageGaussianSmooth> smoother = vtkSmartPointer<vtkImageGaussianSmooth>::New();
+			int scale = 1;
+  			int delta = 0;
+  			int ddepth = CV_16S;
+			Mat m(height+1, width+1, CV_8UC3,matrix);// this works so we can now use opencv
+			Mat src_gray, grad_x, grad_y;
+			Mat abs_grad_x, abs_grad_y;
+			cvtColor( m, src_gray, CV_BGR2GRAY );
+			Sobel(src_gray,grad_x,ddepth,1,0,3,scale,delta, BORDER_DEFAULT);
+			convertScaleAbs( grad_x, abs_grad_x );
+			Sobel(src_gray,grad_y,ddepth,0,1,3,scale,delta, BORDER_DEFAULT);
+			convertScaleAbs( grad_y, abs_grad_y );//do dot product on the grad_x and y not the abs ones since you want the negative values
+			Mat m3(imageViewer->GetSize()[0], imageViewer->GetSize()[1], CV_8UC3,back);
+			Mat m2;
+			resize(m3,m2,cv::Size(),500.0/300,500.0/300);
+			Mat src_gray2, grad_x2, grad_y2;
+			Mat abs_grad_x2, abs_grad_y2;
+			cvtColor( m2, src_gray2, CV_BGR2GRAY );
+			Sobel(src_gray2,grad_x2,ddepth,1,0,3,scale,delta, BORDER_DEFAULT);
+			convertScaleAbs( grad_x2, abs_grad_x2 );
+			Sobel(src_gray2,grad_y2,ddepth,0,1,3,scale,delta, BORDER_DEFAULT);
+			convertScaleAbs( grad_y2, abs_grad_y2 );
+			//imshow("image", abs_grad_x2);
+			//imshow("image2", abs_grad_y2);
+			Mat y,x;
+			y = grad_y2.mul(grad_y);
+			x = grad_x2.mul(grad_x2);
+			int sumY = sum(y)[0];
+			int sumX = sum(x)[0];
+			cout << sumY + sumX<< endl;
+			//updateWindow("image");//compile with opengl
+			//updateWindow("image2");
+			/*vtkSmartPointer<vtkImageGaussianSmooth> smoother = vtkSmartPointer<vtkImageGaussianSmooth>::New();
 			smoother->SetInputData(data);
-			smoother->Update();
-			Mat m(height+1, width+1, CV_8UC3,matrix);
-			imshow("image", m);
-			//waitKey(0);
+			smoother->Update();*/
 			/*vtkSmartPointer<vtkImageViewer2> views = vtkSmartPointer<vtkImageViewer2>::New();
 			vtkSmartPointer<vtkRenderWindowInteractor> ion = vtkSmartPointer<vtkRenderWindowInteractor>::New();
 			views->SetupInteractor(ion);
@@ -129,6 +160,8 @@ class grabBuffer : public vtkInteractorStyleTrackballCamera
 		void captureBuffer()
 		{
 			matrix = _renderWindow->GetPixelData(0,0,height,width,true);
+			int *dims = imageViewer->GetSize();
+			back = imageViewer->GetRenderWindow()->GetPixelData(0,0,dims[0]-1,dims[1]-1,true);
 			visualizeBuffer();
 		}
 		virtual void OnKeyPress()
@@ -168,7 +201,9 @@ int main(int argc, char *argv[])
 	
 	typedef itk::Image<unsigned char, 2> BackType;
 	typedef itk::ImageFileReader<BackType> BackReader;
-
+	std::vector<Mat> stack;
+	imreadmulti("lstep3_Cam_Offset_Cine1.cine_DistCorr.tif",stack);
+	imshow("thing",stack[0]);
 	BackReader::Pointer red = BackReader::New();
 	red->SetFileName("background.png");//eventually this will be a tiff stack
 	red->Update();

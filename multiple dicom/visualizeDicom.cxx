@@ -340,12 +340,7 @@ int main(int argc, char* argv[])
    axialViewer->GetRenderWindow()->SetPosition(400,275);
    sagittalViewer->Render();
    unsigned char* mat = sagittalViewer->GetRenderWindow()->GetPixelData(0,0,399,499,false);
-   int i =0;
-   while(mat[i] != NULL)
-   {
-      i++;
-   }
-   cout<<i<<endl;
+
    //setup for 3d render 
    //needs to be cleaned up
    vtkSmartPointer<vtkImageData> imageData = vtkSmartPointer<vtkImageData>::New();
