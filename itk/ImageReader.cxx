@@ -44,6 +44,8 @@ class grabBuffer : public vtkInteractorStyleTrackballCamera
 		vtkSmartPointer<vtkImageBlend> blend;
 		vtkSmartPointer<vtkImageViewer2> imageViewer;
 		vtkSmartPointer<vtkImageData> data;
+		Mat src_gray2, grad_x2, grad_y2;
+		Mat abs_grad_x2, abs_grad_y2;
    protected:
       	vtkRenderWindow * _renderWindow;
       	int height;
@@ -95,6 +97,7 @@ class grabBuffer : public vtkInteractorStyleTrackballCamera
 		}
 		void blur(vtkImageData* data)//this blocks everthing but mostly because of the imageviewer2 just get rid of the visualization to fix that 
 		{
+			//gradient for the ct
 			int scale = 1;
   			int delta = 0;
   			int ddepth = CV_16S;
@@ -106,36 +109,44 @@ class grabBuffer : public vtkInteractorStyleTrackballCamera
 			convertScaleAbs( grad_x, abs_grad_x );
 			Sobel(src_gray,grad_y,ddepth,0,1,3,scale,delta, BORDER_DEFAULT);
 			convertScaleAbs( grad_y, abs_grad_y );//do dot product on the grad_x and y not the abs ones since you want the negative values
-			Mat m3(imageViewer->GetSize()[0], imageViewer->GetSize()[1], CV_8UC3,back);
-			Mat m2;
-			resize(m3,m2,cv::Size(),500.0/300,500.0/300);
-			Mat src_gray2, grad_x2, grad_y2;
-			Mat abs_grad_x2, abs_grad_y2;
-			cvtColor( m2, src_gray2, CV_BGR2GRAY );
-			Sobel(src_gray2,grad_x2,ddepth,1,0,3,scale,delta, BORDER_DEFAULT);
-			convertScaleAbs( grad_x2, abs_grad_x2 );
-			Sobel(src_gray2,grad_y2,ddepth,0,1,3,scale,delta, BORDER_DEFAULT);
-			convertScaleAbs( grad_y2, abs_grad_y2 );
-			//imshow("image", abs_grad_x2);
+			
+			//imshow("image", m3);
 			//imshow("image2", abs_grad_y2);
-			Mat y,x;
+
+			//gradient correlation stuff
+			//cout <<grad_y2.size().width<<endl;
+			Mat y,x,xx,yy;
+			Mat x2,y2;
 			y = grad_y2.mul(grad_y);
+			x = grad_x2.mul(grad_x);
+			//cout <<"y" <<  <<endl;
+			
+			double sumY = sum(y)[0];
+			double sumX = sum(x)[0];
+			xx = grad_x.mul(grad_x);
+			yy = grad_y.mul(grad_y);
+			x2 = grad_x2.mul(grad_x2);
+			y2 = grad_y2.mul(grad_y2);
+			double SS1 = sum(yy)[0] + sum(xx)[0];
+			double SQ1 = std::sqrt(SS1);
+			double SS2 = sum(y2)[0] + sum(x2)[0];
+			double SQ2 = std::sqrt(SS2);
+			/*
+			//use to show that image correlated with itself is 1
+			y = grad_y2.mul(grad_y2);
 			x = grad_x2.mul(grad_x2);
-			int sumY = sum(y)[0];
-			int sumX = sum(x)[0];
-			cout << sumY + sumX<< endl;
-			//updateWindow("image");//compile with opengl
-			//updateWindow("image2");
-			/*vtkSmartPointer<vtkImageGaussianSmooth> smoother = vtkSmartPointer<vtkImageGaussianSmooth>::New();
-			smoother->SetInputData(data);
-			smoother->Update();*/
-			/*vtkSmartPointer<vtkImageViewer2> views = vtkSmartPointer<vtkImageViewer2>::New();
-			vtkSmartPointer<vtkRenderWindowInteractor> ion = vtkSmartPointer<vtkRenderWindowInteractor>::New();
-			views->SetupInteractor(ion);
-			views->SetInputConnection(smoother->GetOutputPort());
-			views->GetRenderer()->ResetCamera();
-			views->Render();
-			ion->Start();*/
+			double sumY = sum(y)[0];
+			double sumX = sum(x)[0];
+			xx = grad_x2.mul(grad_x2);
+			yy = grad_y2.mul(grad_y2);
+			x2 = grad_x2.mul(grad_x2);
+			y2 = grad_y2.mul(grad_y2);
+			double SS1 = sum(yy)[0] + sum(xx)[0];
+			double SQ1 = std::sqrt(SS1);
+			double SS2 = sum(y2)[0] + sum(x2)[0];
+			double SQ2 = std::sqrt(SS2);
+			*/
+			cout << std::setprecision(4) <<(sumY + sumX)/(SQ1*SQ2)<< endl;
 		}
 		void visualizeBuffer()
 		{
@@ -160,8 +171,8 @@ class grabBuffer : public vtkInteractorStyleTrackballCamera
 		void captureBuffer()
 		{
 			matrix = _renderWindow->GetPixelData(0,0,height,width,true);
-			int *dims = imageViewer->GetSize();
-			back = imageViewer->GetRenderWindow()->GetPixelData(0,0,dims[0]-1,dims[1]-1,true);
+			
+			
 			visualizeBuffer();
 		}
 		virtual void OnKeyPress()
@@ -173,6 +184,26 @@ class grabBuffer : public vtkInteractorStyleTrackballCamera
 			if(key == "c")
 			{
 			captureBuffer();
+			}
+			if(key == "s")
+			{
+				int scale = 1;
+	  			int delta = 0;
+	  			int ddepth = CV_16S;
+				int *dims = imageViewer->GetSize();
+				back = imageViewer->GetRenderWindow()->GetPixelData(0,0,dims[0]-1,dims[1]-1,true);
+				cout <<"okay" << endl;
+				//gradient for the xray
+				Mat m3(imageViewer->GetSize()[0], imageViewer->GetSize()[1], CV_8UC3,back);
+				Mat m2;
+				//resize so they have the same number of pixels
+				resize(m3,m2,cv::Size(),500.0/imageViewer->GetSize()[0],500.0/imageViewer->GetSize()[0]);
+
+				cvtColor( m2, src_gray2, CV_BGR2GRAY );
+				Sobel(src_gray2,grad_x2,ddepth,1,0,3,scale,delta, BORDER_DEFAULT);
+				convertScaleAbs( grad_x2, abs_grad_x2 );
+				Sobel(src_gray2,grad_y2,ddepth,0,1,3,scale,delta, BORDER_DEFAULT);
+				convertScaleAbs( grad_y2, abs_grad_y2 );
 			}
 			vtkInteractorStyleTrackballCamera::OnKeyPress();
 		}
