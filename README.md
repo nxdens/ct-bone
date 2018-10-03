@@ -1,6 +1,6 @@
 ## Dependencies: 
 VTK, OpenCV, Graphics card, ITK, ITKVTKGlue On
-
+Needs the mhd, raw data, distortion correction, background.png, and tif files to run
 ## Issues: 
 1. Tiff reader not yet working due to weird header for vtk
 2. speed of framebuffer better but I think we can still make it faster
