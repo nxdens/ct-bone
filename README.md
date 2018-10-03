@@ -1,7 +1,7 @@
 ## Dependencies: 
 VTK, OpenCV, Graphics card, ITK, ITKVTKGlue On.
 
-# Files Needed:
+### Files Needed:
 Needs the mhd, raw data, distortion correction, background.png, and tif files to run
 ## Issues: 
 1. Tiff reader not yet working due to weird header for vtk
