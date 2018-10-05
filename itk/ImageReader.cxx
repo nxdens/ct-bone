@@ -379,10 +379,9 @@ int main(int argc, char *argv[])
 
 	double pos[3];
 	render->GetActiveCamera()->GetPosition(pos);
-	for(int i = 0; i<3;i++)
-	{	
-		pos[i] = inlineCube.params[i+1];///.79; //.79 is a constant for cm/pixel
-	}
+	pos[0] = inlineCube.params[1]/.79; //.79 is a constant for cm/pixel
+	pos[1] = inlineCube.params[3]/.79; // vtk y, camera z
+	pos[2] = inlineCube.params[2]/.79; //vtk z, camera y
 	render->GetActiveCamera()->SetPosition(pos);
 	cout << "coordinates for the camera: " << pos[0] << ", " << pos[1] << ", " << pos[2] << endl;
 	cout << "Inline camera angles: ";
@@ -403,10 +402,10 @@ int main(int argc, char *argv[])
 	window2->AddRenderer(render2);
 
 	window2->Render();
-	for(int i = 0; i<3;i++)
-	{
-		pos[i] += dif[i]/.79;
-	}
+
+	pos[0] -= dif[0]/.79;
+	pos[1] -= dif[2]/.79;//vtk y is camera z so swap what we use to offset
+	pos[2] -= dif[1]/.79;
 	render2->GetActiveCamera()->SetViewAngle(2*atan(.5*.79*500/offsetCube.params[0]) * 180/ PI);
 	render2->GetActiveCamera()->SetPosition(pos);	
 	double * orr2 = render2->GetActiveCamera()->GetOrientation();
@@ -415,10 +414,10 @@ int main(int argc, char *argv[])
 		cout << orr2[i] << ", ";
 	}
 	cout << endl;
-	cout << dif[5]<< endl;
-	render2->GetActiveCamera()->Pitch((orr[0] + dif[4])-orr2[0]);
-	render2->GetActiveCamera()->Yaw((orr[1] + dif[5])-orr2[1]);
-	render2->GetActiveCamera()->Roll((orr[2] + dif[3])-orr2[2]);
+	//render2->GetActiveCamera()->Roll(orr2[2] -orr[2] + dif[3]);
+	
+	render2->GetActiveCamera()->Yaw(orr2[1] -orr[1] + dif[5]);
+	render2->GetActiveCamera()->Pitch(orr2[0]-orr[0] + dif[4]);
 	orr2 = render2->GetActiveCamera()->GetOrientation();
 	for(int i = 0; i<3; i++)
 	{
