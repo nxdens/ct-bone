@@ -105,6 +105,7 @@ class grabBuffer : public vtkInteractorStyleTrackballCamera
 			imageViewer = viewer;
 			otherR = offset;
 			difs = dif;
+			tr = vtkSmartPointer<vtkInteractorStyleTrackballActor>::New();
 		}
 		void setImageData(vtkImageData * im)// eventually switch this to window to image filter instaed of this jank
 		{
@@ -253,6 +254,7 @@ class grabBuffer : public vtkInteractorStyleTrackballCamera
 				convertScaleAbs( grad_x2, abs_grad_x2 );
 				Sobel(src_gray2,grad_y2,ddepth,0,1,3,scale,delta, BORDER_DEFAULT);
 				convertScaleAbs( grad_y2, abs_grad_y2 );
+				_renderWindow->GetInteractor()->SetInteractorStyle(tr);
 			}
 			vtkInteractorStyleTrackballCamera::OnKeyPress();
 		}
