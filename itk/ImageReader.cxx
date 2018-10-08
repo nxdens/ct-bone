@@ -47,7 +47,7 @@ class cube{//this gets the parameters from the document with the calibration cub
 			std::string str;
 			std::string prev;
 			std::string s2d;
-
+			//parses file to get the parameters for all the values
 			while(getline(file,str))
 			{
 				if(str.find("S2D") != std::string::npos)
@@ -120,11 +120,11 @@ class grabBuffer : public vtkInteractorStyleTrackballCamera
 				   if(matrix[(j*(width+1)+i)*3] != NULL)
 				   {
 					//cout << matrix[(j*(width+1)+i)*3] << " ";
-					//set different values to 0 to give different hue to the image 
+					//set different values to 0 to give different color to the image 
 					//still need to figure out how to add opacity to the image
 					pixel[0] = matrix[(j*(width+1)+i)*3];
-					pixel[1] = matrix[(j*(width+1)+i)*3];
-					pixel[2] = matrix[(j*(width+1)+i)*3];
+					pixel[1] = 0;//matrix[(j*(width+1)+i)*3];
+					pixel[2] = 0;//matrix[(j*(width+1)+i)*3];
 				   }
 				   else
 				   {
@@ -155,14 +155,12 @@ class grabBuffer : public vtkInteractorStyleTrackballCamera
 			//imshow("image", m3);
 			//imshow("image2", abs_grad_y2);
 
-			//gradient correlation stuff
+			//Calculates gradient correlation
 			cout <<grad_y2.size().width<<endl;
 			Mat y,x,xx,yy;
 			Mat x2,y2;
 			y = grad_y2.mul(grad_y);
 			x = grad_x2.mul(grad_x);
-			//cout <<"y" <<  <<endl;
-			
 			double sumY = sum(y)[0];
 			double sumX = sum(x)[0];
 			xx = grad_x.mul(grad_x);
@@ -203,12 +201,15 @@ class grabBuffer : public vtkInteractorStyleTrackballCamera
 			blend->SetOpacity(0, .5);
 			blend->SetOpacity(1,.5);
 			blend->Update();
-			getMetric(matrix);
+			
 			imageViewer->SetInputData(blend->GetOutput());
 			imageViewer->GetRenderer()->ResetCamera();
 			imageViewer->Render();
+
+			getMetric(matrix);
 		 
 		}
+		//unused was originally used to pass information between the two ct windows
 		void applyOffset()
 		{
 			//double pos[3];
@@ -219,8 +220,7 @@ class grabBuffer : public vtkInteractorStyleTrackballCamera
 		void captureBuffer()
 		{
 			matrix = _renderWindow->GetPixelData(0,0,height,width,true);
-			
-			
+			//superimposes and generates a metric
 			visualizeBuffer();
 		}
 		virtual void OnKeyPress()
@@ -230,7 +230,8 @@ class grabBuffer : public vtkInteractorStyleTrackballCamera
 			std::string key = rwi->GetKeySym();
 			//cout << "Pressed: "<< key << endl;
 			if(key == "c")
-			{
+			{	
+				//this gets the frame buffer from the render window and passes it to opencv to generate a metric
 				captureBuffer();
 			}
 			if(key == "s")
@@ -246,7 +247,7 @@ class grabBuffer : public vtkInteractorStyleTrackballCamera
 				Mat m2;
 				//resize so they have the same number of pixels
 				resize(m3,m2,cv::Size(),500.0/imageViewer->GetSize()[0],500.0/imageViewer->GetSize()[0]);
-
+				//sets values for gradients of the xray images so it doesnt need to be recomputed
 				cvtColor( m2, src_gray2, CV_BGR2GRAY );
 				Sobel(src_gray2,grad_x2,ddepth,1,0,3,scale,delta, BORDER_DEFAULT);
 				convertScaleAbs( grad_x2, abs_grad_x2 );
@@ -268,6 +269,7 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 	cout << "Press s first before using c to generate a metric\n";
+	//Read in the raw data file
 	typedef itk::Image< unsigned short ,3>	ImageType;
 	typedef itk::ImageFileReader<ImageType> ReaderType;
 
@@ -277,35 +279,39 @@ int main(int argc, char *argv[])
 	//This doesnt convert the coordinate systems so the image that you get from vtk is flipped in the y from itk 
 	ImageType::Pointer image = reader->GetOutput();
     //image->Print(std::cout ); 
-	
+	//opencv setup to read tiff images will eventually use this once we can superimpose the ct bone onto the window in real time
 	typedef itk::Image<unsigned char, 2> BackType;
 	typedef itk::ImageFileReader<BackType> BackReader;
 	std::vector<Mat> stack;
 	imreadmulti("lstep3_Cam_Offset_Cine1.cine_DistCorr.tif",stack);
 	std::vector<Mat> stack2;
 	imreadmulti("lstep3_Cam_Inline_Cine1.cine_DistCorr.tif",stack2);
-	//imshow("thing",stack[0]);//need to get open gl so we can update the window in real time
+	imshow("Offset",stack2[25]);//need to get open gl so we can update the window in real time
 	//setOpenGlContext("thing");
+
+	//reads the xray image 
 	BackReader::Pointer red = BackReader::New();
 	red->SetFileName("background.png");//eventually this will be a tiff stack
 	red->Update();
+	BackType::Pointer background = red->GetOutput();
+	//opens the text files to read the offsets fro the two camera parameters
 	cube inlineCube;
 	inlineCube.findParams("cube_b_Cam_Inline_Cine1.cine_DistCorr.tif.txt");
 	cube offsetCube;
 	offsetCube.findParams("cube_b_Cam_Offset_Cine1.cine_DistCorr.tif.txt");
 	//get the relative position from the inline camera for the offset camera
-	std::vector<double> dif;// x, y, z, roll, pitch, yaw offset respectively
+	std::vector<double> dif;// x, y, z, roll, pitch, yaw offset respectively but vtk gives output in pitch yaw roll
 	std::vector<double> odif;
+	//calculate the differences between the parameters gets the positive (dif) and the negative (odif)
 	for(int i = 1; i< 7;i++)
 	{
 		dif.push_back(inlineCube.params.at(i) - offsetCube.params.at(i));
-		cout << dif[i-1] << endl;
 		odif.push_back(-(inlineCube.params.at(i) - offsetCube.params.at(i)));
 	}
 
-	BackType::Pointer background = red->GetOutput();
+	
 
-	//setup the main 3d window environment
+	//setup the main 3d window environment 
 	vtkSmartPointer<vtkRenderWindow> window = vtkSmartPointer<vtkRenderWindow>::New();
 	vtkSmartPointer<vtkRenderer> render = vtkSmartPointer<vtkRenderer>::New();
 	vtkSmartPointer<vtkRenderWindowInteractor> interactor = vtkSmartPointer<vtkRenderWindowInteractor>::New();
@@ -314,6 +320,7 @@ int main(int argc, char *argv[])
 	vtkSmartPointer<vtkVolumeProperty> prop = vtkSmartPointer<vtkVolumeProperty>::New();
 	vtkSmartPointer<vtkImageData> data = vtkSmartPointer<vtkImageData>::New();
 	vtkSmartPointer<grabBuffer> style = vtkSmartPointer<grabBuffer>::New();
+	vtkSmartPointer<vtkRenderWindowInteractor> interact = vtkSmartPointer<vtkRenderWindowInteractor>::New();
 	//create another render window to get the second view need to set the camera so that it matches the parameters of the xray maybe I should just make a header file to automate most of this
 	vtkSmartPointer<vtkRenderer> render2 = vtkSmartPointer<vtkRenderer>::New();
 	vtkSmartPointer<vtkRenderWindow> window2 = vtkSmartPointer<vtkRenderWindow>::New();
@@ -324,21 +331,21 @@ int main(int argc, char *argv[])
 	//setup the side view to see the xray with ct screen overlay
 	
 	typedef itk::ImageToVTKImageFilter<BackType> BackConnector;
-
+	//connects the itk reading of the xray image to vtk to display
 	BackConnector::Pointer bConnect = BackConnector::New();
 	bConnect->SetInput(background);
 	bConnect->Update();
-
+	//flip along the y axis to correct for the different origins
 	vtkSmartPointer<vtkImageFlip> flipY = vtkSmartPointer<vtkImageFlip>::New();
 	flipY->SetFilteredAxis(1);
 	flipY->SetInputData(bConnect->GetOutput());
 	flipY->Update();
-
+	//creates the display window for the xray
 	vtkSmartPointer<vtkImageViewer2> viewer = vtkSmartPointer<vtkImageViewer2>::New();
 	viewer->SetInputConnection(flipY->GetOutputPort());
 	viewer->GetRenderer()->ResetCamera();
 
-	vtkSmartPointer<vtkRenderWindowInteractor> interact = vtkSmartPointer<vtkRenderWindowInteractor>::New();
+	
 	
 	viewer->SetupInteractor(interact);
 	interact->Initialize();
@@ -351,6 +358,7 @@ int main(int argc, char *argv[])
 	interactor->SetRenderWindow(window);
 	window->Render();
 
+	//filter to send the raw data from itk to vtk
 	typedef itk::ImageToVTKImageFilter<ImageType> ConnectorType;
 
 	ConnectorType::Pointer connector = ConnectorType::New();
@@ -362,7 +370,7 @@ int main(int argc, char *argv[])
 	mapper->SetBlendModeToComposite();
 	mapper->SetRequestedRenderModeToGPU();
 	mapper->SetInputData(data);
-
+	//needs this to be able to render the data
 	vtkSmartPointer<vtkPiecewiseFunction> compositeOpacity =
 	vtkSmartPointer<vtkPiecewiseFunction>::New();
 	compositeOpacity->AddPoint(0.0,0.0);
@@ -373,27 +381,22 @@ int main(int argc, char *argv[])
 	volume->SetProperty(prop);
 
 	render->AddVolume(volume);
-	
+	//sets the camera propeties based on the text files for the cameras
 	render->ResetCamera();
 	render->GetActiveCamera()->SetViewAngle(2*atan(.5*.79*500/inlineCube.params[0]) * 180 /PI);
-
+	//sets the position of the camera and converts pixel
 	double pos[3];
 	render->GetActiveCamera()->GetPosition(pos);
 	pos[0] = inlineCube.params[1]/.79; //.79 is a constant for cm/pixel
 	pos[1] = inlineCube.params[3]/.79; // vtk y, camera z
 	pos[2] = inlineCube.params[2]/.79; //vtk z, camera y
 	render->GetActiveCamera()->SetPosition(pos);
-	cout << "coordinates for the camera: " << pos[0] << ", " << pos[1] << ", " << pos[2] << endl;
-	cout << "Inline camera angles: ";
 	double * orr = render->GetActiveCamera()->GetOrientation();//orrientation is given in pitch,yaw,roll
-	for(int i = 0; i<3; i++)
-	{
-		cout << orr[i] << ", ";
-	}
-	cout << endl;
+	window->SetWindowName("Inline");
 	window->Render();
-
+	//sets up second window for ct data
 	window2->SetSize(500,500);
+	window2->SetWindowName("offset");
 	interact2->SetInteractorStyle(style2);
 	style2->SetWindow(window2,viewer,viewer->GetInput(),render,odif);
 	interact2->SetRenderWindow(window2);
@@ -402,29 +405,18 @@ int main(int argc, char *argv[])
 	window2->AddRenderer(render2);
 
 	window2->Render();
-
+	//applies the offset from the first camera and sets the viewing angle
 	pos[0] -= dif[0]/.79;
 	pos[1] -= dif[2]/.79;//vtk y is camera z so swap what we use to offset
 	pos[2] -= dif[1]/.79;
 	render2->GetActiveCamera()->SetViewAngle(2*atan(.5*.79*500/offsetCube.params[0]) * 180/ PI);
 	render2->GetActiveCamera()->SetPosition(pos);	
 	double * orr2 = render2->GetActiveCamera()->GetOrientation();
-	for(int i = 0; i<3; i++)
-	{
-		cout << orr2[i] << ", ";
-	}
-	cout << endl;
-	//render2->GetActiveCamera()->Roll(orr2[2] -orr[2] + dif[3]);
-	
+	//applies the rotation offset from the first camera
+	render2->GetActiveCamera()->Roll(orr2[2] -orr[2] + dif[3]);
 	render2->GetActiveCamera()->Yaw(orr2[1] -orr[1] + dif[5]);
 	render2->GetActiveCamera()->Pitch(orr2[0]-orr[0] + dif[4]);
-	orr2 = render2->GetActiveCamera()->GetOrientation();
-	for(int i = 0; i<3; i++)
-	{
-		cout << orr2[i] << ", ";
-	}
-	cout << endl;
-	//this approach works but idk about the speed of it
+	//this approach works its pretty fast for now if the superposition is tied to a threaded event rather than keyboard shortcuts
 	interact2->Start();// to sync the cameras just make something that can get the camera position of the other camera and add the offset from the inline camera or whatever
 
 	return 0;
