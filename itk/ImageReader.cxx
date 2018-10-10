@@ -21,6 +21,7 @@
 #include <vtkUnsignedCharArray.h>
 #include <vtkImageBlend.h>
 #include <vtkCamera.h>
+#include <vtkInteractorStyleTrackballActor.h>
 //image processing includes
 #include "vtkImageGaussianSmooth.h"
 
@@ -71,11 +72,12 @@ class cube{//this gets the parameters from the document with the calibration cub
 		    }
 		}
 };
-class grabBuffer : public vtkInteractorStyleTrackballCamera
+
+class bufferGrab : public vtkInteractorStyleTrackballActor
 {
    public:
-		static grabBuffer * New();
-		vtkTypeMacro(grabBuffer, vtkInteractorStyleTrackballCamera);
+		static bufferGrab * New();
+		vtkTypeMacro(bufferGrab, vtkInteractorStyleTrackballActor);
 		unsigned char* matrix;
 		unsigned char* back;
 		vtkSmartPointer<vtkImageBlend> blend;
@@ -105,7 +107,199 @@ class grabBuffer : public vtkInteractorStyleTrackballCamera
 			imageViewer = viewer;
 			otherR = offset;
 			difs = dif;
-			tr = vtkSmartPointer<vtkInteractorStyleTrackballActor>::New();
+	
+		}
+		void setImageData(vtkImageData * im)// eventually switch this to window to image filter instaed of this jank
+		{
+			vtkSmartPointer<vtkUnsignedCharArray> ar = vtkSmartPointer<vtkUnsignedCharArray>::New();
+			ar->SetArray(matrix,(height+1)*(width+1),1);
+			im->SetDimensions(height+1,width+1,1);
+			im->AllocateScalars(VTK_UNSIGNED_CHAR,3);
+			for(int i =0;i<=width;i++)
+			{
+				for(int j = 0 ; j<=height;j++)
+				{
+				   unsigned char* pixel = static_cast<unsigned char*>(im->GetScalarPointer(i,j,0));
+				   if(matrix[(j*(width+1)+i)*3] != NULL)
+				   {
+					//cout << matrix[(j*(width+1)+i)*3] << " ";
+					//set different values to 0 to give different color to the image 
+					//still need to figure out how to add opacity to the image
+					pixel[0] = matrix[(j*(width+1)+i)*3];
+					pixel[1] = 0;//matrix[(j*(width+1)+i)*3];
+					pixel[2] = 0;//matrix[(j*(width+1)+i)*3];
+				   }
+				   else
+				   {
+					pixel[0] = 0;
+					pixel[1] = 0;
+					pixel[2] = 0;
+				   }
+				}
+			}
+			im->Modified();
+			//im->SetInputData(matrix);//aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaahhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh why doesnt this just work
+		}
+		void getMetric(unsigned char * matrx)//this blocks everthing but mostly because of the imageviewer2 just get rid of the visualization to fix that 
+		{
+			//gradient for the ct
+			int scale = 1;
+  			int delta = 0;
+  			int ddepth = CV_16S;
+			Mat m(height+1, width+1, CV_8UC3,matrx);// this works so we can now use opencv
+			Mat src_gray, grad_x, grad_y;
+			Mat abs_grad_x, abs_grad_y;
+			cvtColor( m, src_gray, CV_BGR2GRAY );
+			Sobel(src_gray,grad_x,ddepth,1,0,3,scale,delta, BORDER_DEFAULT);
+			convertScaleAbs( grad_x, abs_grad_x );
+			Sobel(src_gray,grad_y,ddepth,0,1,3,scale,delta, BORDER_DEFAULT);
+			convertScaleAbs( grad_y, abs_grad_y );//do dot product on the grad_x and y not the abs ones since you want the negative values
+			
+			//imshow("image", m3);
+			//imshow("image2", abs_grad_y2);
+
+			//Calculates gradient correlation
+			cout <<grad_y2.size().width<<endl;
+			Mat y,x,xx,yy;
+			Mat x2,y2;
+			y = grad_y2.mul(grad_y);
+			x = grad_x2.mul(grad_x);
+			double sumY = sum(y)[0];
+			double sumX = sum(x)[0];
+			xx = grad_x.mul(grad_x);
+			yy = grad_y.mul(grad_y);
+			x2 = grad_x2.mul(grad_x2);
+			y2 = grad_y2.mul(grad_y2);
+			double SS1 = sum(yy)[0] + sum(xx)[0];
+			double SQ1 = std::sqrt(SS1);
+			double SS2 = sum(y2)[0] + sum(x2)[0];
+			double SQ2 = std::sqrt(SS2);
+			/*
+			//use to show that image correlated with itself is 1
+			y = grad_y2.mul(grad_y2);
+			x = grad_x2.mul(grad_x2);
+			double sumY = sum(y)[0];
+			double sumX = sum(x)[0];
+			xx = grad_x2.mul(grad_x2);
+			yy = grad_y2.mul(grad_y2);
+			x2 = grad_x2.mul(grad_x2);
+			y2 = grad_y2.mul(grad_y2);
+			double SS1 = sum(yy)[0] + sum(xx)[0];
+			double SQ1 = std::sqrt(SS1);
+			double SS2 = sum(y2)[0] + sum(x2)[0];
+			double SQ2 = std::sqrt(SS2);
+			*/
+			cout << std::setprecision(4) <<(sumY + sumX)/(SQ1*SQ2)<< endl;
+		}
+		void visualizeBuffer()
+		{
+			vtkSmartPointer<vtkImageData> im = vtkSmartPointer<vtkImageData>::New();
+			setImageData(im);
+
+			blend = vtkSmartPointer<vtkImageBlend>::New();
+			//blend->SetBlendModeToCompound();
+			blend->AddInputData(im);
+			blend->AddInputData(data);
+
+			blend->SetOpacity(0, .5);
+			blend->SetOpacity(1,.5);
+			blend->Update();
+			
+			imageViewer->SetInputData(blend->GetOutput());
+			imageViewer->GetRenderer()->ResetCamera();
+			imageViewer->Render();
+
+			getMetric(matrix);
+		 
+		}
+		//unused was originally used to pass information between the two ct windows
+		void applyOffset()
+		{
+			//double pos[3];
+
+			otherR->GetActiveCamera();
+		}
+   protected:
+		void captureBuffer()
+		{
+			matrix = _renderWindow->GetPixelData(0,0,height,width,true);
+			//superimposes and generates a metric
+			visualizeBuffer();
+		}
+		virtual void OnKeyPress()
+		{
+			vtkRenderWindowInteractor * rwi = this->Interactor;
+
+			std::string key = rwi->GetKeySym();
+			//cout << "Pressed: "<< key << endl;
+			if(key == "c")
+			{	
+				//this gets the frame buffer from the render window and passes it to opencv to generate a metric
+				captureBuffer();
+			}
+			if(key == "s")
+			{
+				int scale = 1;
+	  			int delta = 0;
+	  			int ddepth = CV_16S;
+				int *dims = imageViewer->GetSize();
+				back = imageViewer->GetRenderWindow()->GetPixelData(0,0,dims[0]-1,dims[1]-1,true);
+				cout <<"okay" << endl;
+				//gradient for the xray
+				Mat m3(imageViewer->GetSize()[0], imageViewer->GetSize()[1], CV_8UC3,back);
+				Mat m2;
+				//resize so they have the same number of pixels
+				resize(m3,m2,cv::Size(),500.0/imageViewer->GetSize()[0],500.0/imageViewer->GetSize()[0]);
+				//sets values for gradients of the xray images so it doesnt need to be recomputed
+				cvtColor( m2, src_gray2, CV_BGR2GRAY );
+				Sobel(src_gray2,grad_x2,ddepth,1,0,3,scale,delta, BORDER_DEFAULT);
+				convertScaleAbs( grad_x2, abs_grad_x2 );
+				Sobel(src_gray2,grad_y2,ddepth,0,1,3,scale,delta, BORDER_DEFAULT);
+				convertScaleAbs( grad_y2, abs_grad_y2 );
+			}
+			vtkInteractorStyleTrackballActor::OnKeyPress();
+		}
+
+};
+
+vtkStandardNewMacro(bufferGrab);
+
+class grabBuffer : public vtkInteractorStyleTrackballCamera
+{
+   public:
+		static grabBuffer * New();
+		vtkTypeMacro(grabBuffer, vtkInteractorStyleTrackballCamera);
+		unsigned char* matrix;
+		unsigned char* back;
+		vtkSmartPointer<vtkImageBlend> blend;
+		vtkSmartPointer<vtkImageViewer2> imageViewer;
+		vtkSmartPointer<vtkImageData> data;//used only to blend images should try to find a better wa to do this so that we can open tiff files
+		Mat src_gray2, grad_x2, grad_y2;
+		Mat abs_grad_x2, abs_grad_y2;
+		std::vector<double> difs;
+		vtkSmartPointer<bufferGrab> tr;
+   protected:
+      	vtkSmartPointer<vtkRenderWindow> _renderWindow;
+      	vtkSmartPointer<vtkRenderer> otherR;// give both window the other window and be able to switch on and off on screen rendering of the other with one 
+      	int height;
+      	int width;
+    	const char rgb = 3;
+
+   public:
+		void SetWindow(vtkRenderWindow* window, vtkImageViewer2* viewer, vtkImageData* dat, vtkRenderer* offset,std::vector<double> dif)
+		{
+			_renderWindow = window;
+			int* dim = window->GetSize();
+			height = dim[0]-1;
+			width = dim[1]-1;
+			//cout <<"height: " << height+1 <<"\t width = " << width+1 << endl;
+			matrix = new unsigned char[dim[0]*dim[1]*3+1];
+			data = dat;
+			imageViewer = viewer;
+			otherR = offset;
+			difs = dif;
+			tr = vtkSmartPointer<bufferGrab>::New();
+			tr->SetWindow(window,viewer,dat,offset,dif);
 		}
 		void setImageData(vtkImageData * im)// eventually switch this to window to image filter instaed of this jank
 		{
@@ -262,6 +456,8 @@ class grabBuffer : public vtkInteractorStyleTrackballCamera
 };
 
 vtkStandardNewMacro(grabBuffer);
+
+
 
 int main(int argc, char *argv[])
 {
