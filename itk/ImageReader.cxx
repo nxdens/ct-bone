@@ -22,6 +22,7 @@
 #include <vtkImageBlend.h>
 #include <vtkCamera.h>
 #include <vtkInteractorStyleTrackballActor.h>
+#include <vtkPropPicker.h>
 //image processing includes
 #include "vtkImageGaussianSmooth.h"
 
@@ -86,6 +87,7 @@ class bufferGrab : public vtkInteractorStyleTrackballActor
 		Mat src_gray2, grad_x2, grad_y2;
 		Mat abs_grad_x2, abs_grad_y2;
 		std::vector<double> difs;
+		vtkSmartPointer<vtkVolume> vol;
 
    protected:
       	vtkSmartPointer<vtkRenderWindow> _renderWindow;
@@ -95,7 +97,7 @@ class bufferGrab : public vtkInteractorStyleTrackballActor
     	const char rgb = 3;
 
    public:
-		void SetWindow(vtkRenderWindow* window, vtkImageViewer2* viewer, vtkImageData* dat, vtkRenderer* offset,std::vector<double> dif)
+		void SetWindow(vtkRenderWindow* window, vtkImageViewer2* viewer, vtkImageData* dat, vtkRenderer* offset,std::vector<double> dif )
 		{
 			_renderWindow = window;
 			int* dim = window->GetSize();
@@ -107,7 +109,6 @@ class bufferGrab : public vtkInteractorStyleTrackballActor
 			imageViewer = viewer;
 			otherR = offset;
 			difs = dif;
-	
 		}
 		void setImageData(vtkImageData * im)// eventually switch this to window to image filter instaed of this jank
 		{
@@ -159,7 +160,6 @@ class bufferGrab : public vtkInteractorStyleTrackballActor
 			//imshow("image2", abs_grad_y2);
 
 			//Calculates gradient correlation
-			cout <<grad_y2.size().width<<endl;
 			Mat y,x,xx,yy;
 			Mat x2,y2;
 			y = grad_y2.mul(grad_y);
@@ -226,6 +226,7 @@ class bufferGrab : public vtkInteractorStyleTrackballActor
 			//superimposes and generates a metric
 			visualizeBuffer();
 		}
+
 		virtual void OnKeyPress()
 		{
 			vtkRenderWindowInteractor * rwi = this->Interactor;
@@ -235,7 +236,10 @@ class bufferGrab : public vtkInteractorStyleTrackballActor
 			if(key == "c")
 			{	
 				//this gets the frame buffer from the render window and passes it to opencv to generate a metric
+				//otherR->GetVolumes()->GetNextVolume()->SetOrientation(this->GetDefaultRenderer()->GetVolumes()->GetNextVolume()->GetOrientation());
 				captureBuffer();
+				otherR->GetRenderWindow()->Render();
+				//this->GetDefaultRenderer()->GetRenderWindow()->Render();
 			}
 			if(key == "s")
 			{
@@ -272,7 +276,6 @@ class grabBuffer : public vtkInteractorStyleTrackballCamera
 		vtkSmartPointer<bufferGrab> tr;
    protected:
       	vtkSmartPointer<vtkRenderWindow> _renderWindow;
-
    public:
 		void SetWindow(vtkRenderWindow* window, vtkImageViewer2* viewer, vtkImageData* dat, vtkRenderer* offset,std::vector<double> dif)
 		{
@@ -280,13 +283,10 @@ class grabBuffer : public vtkInteractorStyleTrackballCamera
 			tr = vtkSmartPointer<bufferGrab>::New();
 			tr->SetWindow(window,viewer,dat,offset,dif);
 		}
-		
    protected:
-
 		virtual void OnKeyPress()
 		{
 			vtkRenderWindowInteractor * rwi = this->Interactor;
-
 			std::string key = rwi->GetKeySym();
 			if(key == "s")
 			{
@@ -308,7 +308,7 @@ int main(int argc, char *argv[])
 		std::cerr << "Usage: " << argv[0] << " [inputImageFile]" << std::endl;
 		return EXIT_FAILURE;
 	}
-	cout << "Press s first before using c to generate a metric\n";
+	cout << "Press s twice before using c to generate a metric\n";
 	//Read in the raw data file
 	typedef itk::Image< unsigned short ,3>	ImageType;
 	typedef itk::ImageFileReader<ImageType> ReaderType;
