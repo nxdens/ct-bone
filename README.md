@@ -7,7 +7,11 @@ Needs the mhd, raw data, distortion correction, background.png, and tif files to
 1. Tiff reader not yet working due to weird header for vtk
 2. speed of framebuffer better but I think we can still make it faster
 3. Not fully utilizing the graphics card for the computations which could be why some of the rotating is slower
-
+## Common crash issues
+1. need to click on each of the windows before pressing s (the windows dont update after camera is updated)
+2. not pressing s twice before generating a metric will crash since the xray data is not set (no longer crashes but will produce NaN values)
+3. files must be in the executable directory for the program to run.
+4. opencv must be setup to run with opengl
 ## To-do: 
 1. Get tiff reader working for the weird header
 2. Do math to lock camera distance from the render for size
