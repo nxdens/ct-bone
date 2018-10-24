@@ -2,10 +2,10 @@
 #include "itkImage.h"
 #include "itkImageFileReader.h"
 #include "itkRGBPixel.h" //need this to use any sort of rgb 
-
-//all the rendering includes
 #include <itkImageToVTKImageFilter.h>
 #include "itkVTKImageToImageFilter.h"
+
+//all the visualization includes
 #include <vtkSmartPointer.h>
 #include <vtkRenderer.h>
 #include <vtkImageViewer2.h>
@@ -22,16 +22,14 @@
 #include <vtkImageBlend.h>
 #include <vtkCamera.h>
 #include <vtkInteractorStyleTrackballActor.h>
-#include <vtkPropPicker.h>
-//image processing includes
-#include "vtkImageGaussianSmooth.h"
+#include <vtkImageFlip.h>
 
 //opencv includes
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include "opencv2/imgproc/imgproc.hpp"
 
-#include <vtkImageFlip.h>
+//c and cpp standards
 #include "QuickView.h"
 #include <stdio.h>
 #include <fstream>
