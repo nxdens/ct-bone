@@ -97,6 +97,7 @@ class grabBufferActor : public vtkInteractorStyleTrackballActor
    protected:
       	vtkSmartPointer<vtkRenderWindow> ctRenderWindow;
       	vtkSmartPointer<vtkImageBlend> xrayCTImageBlender;
+      	vtkSmartPointer<vtkVolume> ctProp; //eventually change this to be an array for multiple objects
       	int height;
       	int width;
     	const char rgb = 3;
@@ -110,7 +111,7 @@ class grabBufferActor : public vtkInteractorStyleTrackballActor
 		vtkSmartPointer<vtkImageViewer2> xrayImageViewer;
 
    public:
-		void SetWindow(vtkRenderWindow* ctWindow, vtkImageViewer2* xrayViewer, vtkImageData* xrayData, vtkRenderer* offset,std::vector<double> differences )
+		void SetWindow(vtkRenderWindow* ctWindow, vtkImageViewer2* xrayViewer, vtkImageData* xrayData, vtkRenderer* offset,std::vector<double> differences,vtkVolume * ctVolume )
 		{
 			ctRenderWindow = ctWindow;
 			int* dim = ctWindow->GetSize();
@@ -122,6 +123,8 @@ class grabBufferActor : public vtkInteractorStyleTrackballActor
 			xrayImageViewer = xrayViewer;
 			otherRenderer = offset;
 			cubeParametersDifs = differences;
+			ctProp = ctVolume;
+			ctVolume->RotateX(1);
 			setXray();
 		}
 		void setImageData(vtkImageData * im)// eventually switch this to window to image filter instaed of this jank
@@ -138,10 +141,11 @@ class grabBufferActor : public vtkInteractorStyleTrackballActor
 				   currentPixel = static_cast<unsigned char*>(im->GetScalarPointer(i,j,0));
 				   if(ctPixelDataMatrix[(j*(width+1)+i)*3] != NULL)
 				   {
+				   	char intensity =ctPixelDataMatrix[(j*(width+1)+i)*3]*2;
 					//cout << ctPixelDataMatrix[(j*(width+1)+i)*3] << " ";
 					//set different values to 0 to give different color to the image 
 					//still need to figure out how to add opacity to the image
-					currentPixel[0] = ctPixelDataMatrix[(j*(width+1)+i)*3];
+					currentPixel[0] = intensity;
 					currentPixel[1] = 0;//ctPixelDataMatrix[(j*(width+1)+i)*3];
 					currentPixel[2] = 0;//ctPixelDataMatrix[(j*(width+1)+i)*3];
 				   }
@@ -202,7 +206,7 @@ class grabBufferActor : public vtkInteractorStyleTrackballActor
 			double SQ2 = std::sqrt(SS2);
 			*/
 
-			cout << std::setprecision(4) <<(sumY + sumX)/(SQ1*SQ2)<< endl;
+			cout << std::setprecision(4) <<( sumY + sumX)/(SQ1*SQ2)<< endl;
 		}
 		void visualizeBuffer()
 		{
@@ -250,6 +254,7 @@ class grabBufferActor : public vtkInteractorStyleTrackballActor
 			Sobel(src_grayXray,grad_yXray,ddepth,0,1,3,scale,delta, BORDER_DEFAULT);
 			convertScaleAbs( grad_yXray, abs_grad_yXray );
 		}
+		
 		virtual void OnKeyPress()
 		{
 			//get the key pressed from the interactor
@@ -267,7 +272,19 @@ class grabBufferActor : public vtkInteractorStyleTrackballActor
 				cout <<"okay" << endl;
 				setXray();
 			}
+			if(key == "q")
+			{
+				manipulateVolume();//crashes when called from the offset render window for some reason
+				ctRenderWindow->Render();
+			}
 			vtkInteractorStyleTrackballActor::OnKeyPress();
+		}
+	protected:
+		void manipulateVolume()
+		{
+			ctProp->AddOrientation(1,0,0);
+			ctProp->Update();
+			//Prop3DTransform //eventually
 		}
 
 };
@@ -281,11 +298,11 @@ class grabBufferCamera : public vtkInteractorStyleTrackballCamera
 		vtkTypeMacro(grabBufferCamera, vtkInteractorStyleTrackballCamera);
 		vtkSmartPointer<grabBufferActor> trackballActorStyle;
    public:
-		void SetWindow(vtkRenderWindow* ctWindow, vtkImageViewer2* xrayViewer, vtkImageData* xrayData, vtkRenderer* otherRenderer,std::vector<double> differences)
+		void SetWindow(vtkRenderWindow* ctWindow, vtkImageViewer2* xrayViewer, vtkImageData* xrayData, vtkRenderer* otherRenderer,std::vector<double> differences,vtkVolume * ctVolume)
 		{
 			ctWindow->Render();
 			trackballActorStyle = vtkSmartPointer<grabBufferActor>::New();
-			trackballActorStyle->SetWindow(ctWindow,xrayViewer,xrayData,otherRenderer,differences);
+			trackballActorStyle->SetWindow(ctWindow,xrayViewer,xrayData,otherRenderer,differences,ctVolume);
 			//_renderWindow->GetInteractor()->SetInteractorStyle(trackballActorStyle);
 		}
    protected:
@@ -315,16 +332,38 @@ public:
 	virtual void Execute(vtkObject *caller, unsigned long eventId, void * vtkNotUsed(callData))
 	{
 		//cout << "modded" << endl;
-		//this is jagged and i suspect that it is due to the fact that it gets called too often
+		//this is jagged when attached to the volume modified and i suspect that it is due to the fact that it gets called too often
       	otherRenderer->Render();
 	}
 
 	vtkSmartPointer<vtkRenderWindow> otherRenderer;
 };
 
+class volumeSpinner :public vtkCommand
+{
+	public:
+		static volumeSpinner * New()
+		{
+			volumeSpinner * spinner = new volumeSpinner();
+			return spinner;
+		}
+		virtual void Execute(vtkObject * caller, unsigned long eventId, void * vtkNotUsed(callData))
+		{
+			if(eventId == vtkCommand::TimerEvent && eventId != vtkCommand::LeftButtonPressEvent)
+			{
+				ctVolume->RotateX(2);//this rotates around the world axis
+				ctInlineWindow->Render();
+				ctOffsetWindow->Render();
+			}
+		}
+
+		vtkSmartPointer<vtkVolume> ctVolume;
+		vtkSmartPointer<vtkRenderWindow> ctInlineWindow;
+		vtkSmartPointer<vtkRenderWindow> ctOffsetWindow;
+};
+
 int main(int argc, char *argv[])
 {
-
 
 //usage statements
 	if(argc < 2)
@@ -343,6 +382,23 @@ int main(int argc, char *argv[])
 	imshow("Offset",inlineStack[25]);//need to get open gl so we can update the window in real time
 	//setOpenGlContext("thing");//crashes program if opencv is not compiled correctly
 //end opencv tif reader*/
+
+//start cube parameter setup
+	//opens the text files to read the offsets fro the two camera parameters
+	cube inlineCube;
+	inlineCube.findParams("cube_b_Cam_Inline_Cine1.cine_DistCorr.tif.txt");
+	cube offsetCube;
+	offsetCube.findParams("cube_b_Cam_Offset_Cine1.cine_DistCorr.tif.txt");
+	//get the relative position from the inline camera for the offset camera
+	std::vector<double> cubeParameterDifferences;// x, y, z, roll, pitch, yaw offset respectively but vtk gives output in pitch yaw roll
+	std::vector<double> oppositeCubeParameterDifferences;
+	//calculate the differences between the parameters gets the positive (cubeParameterDifferences) and the negative (odif)
+	for(int i = 1; i< 7;i++)
+	{
+		cubeParameterDifferences.push_back(inlineCube.cubeParameters.at(i) - offsetCube.cubeParameters.at(i));
+		oppositeCubeParameterDifferences.push_back(-(inlineCube.cubeParameters.at(i) - offsetCube.cubeParameters.at(i)));
+	}
+//end cube parameter setup
 
 //start itk xray data read
 	typedef itk::Image<unsigned char, 2> xrayType;
@@ -378,38 +434,6 @@ int main(int argc, char *argv[])
 	xrayWindowInteractor->Initialize();
 //end setup first xray view*/
 
-//start itk raw ct read
-	//Read in the raw data file
-	typedef itk::Image< unsigned short ,3>	ctRawType;
-	typedef itk::ImageFileReader<ctRawType> ctReaderType;
-
-	ctReaderType::Pointer ctRawReader = ctReaderType::New();
-	ctRawReader->SetFileName(argv[1]);
-	ctRawReader->Update();
-	//This doesnt convert the coordinate systems so the image that you get from vtk is flipped in the y from itk 
-	ctRawType::Pointer ctRawImage = ctRawReader->GetOutput();
-    //image->Print(std::cout ); //use to print image header data 
-//end itk raw ct read
-	
-	
-
-//start cube parameter setup
-	//opens the text files to read the offsets fro the two camera parameters
-	cube inlineCube;
-	inlineCube.findParams("cube_b_Cam_Inline_Cine1.cine_DistCorr.tif.txt");
-	cube offsetCube;
-	offsetCube.findParams("cube_b_Cam_Offset_Cine1.cine_DistCorr.tif.txt");
-	//get the relative position from the inline camera for the offset camera
-	std::vector<double> cubeParameterDifferences;// x, y, z, roll, pitch, yaw offset respectively but vtk gives output in pitch yaw roll
-	std::vector<double> oppositeCubeParameterDifferences;
-	//calculate the differences between the parameters gets the positive (cubeParameterDifferences) and the negative (odif)
-	for(int i = 1; i< 7;i++)
-	{
-		cubeParameterDifferences.push_back(inlineCube.cubeParameters.at(i) - offsetCube.cubeParameters.at(i));
-		oppositeCubeParameterDifferences.push_back(-(inlineCube.cubeParameters.at(i) - offsetCube.cubeParameters.at(i)));
-	}
-//end cube parameter setup
-
 //start important 3d render object declarations
 	//would need to get the volume properties parameterized for multiple bones
 	vtkSmartPointer<vtkVolume> ctVolume = vtkSmartPointer<vtkVolume>::New();
@@ -428,7 +452,18 @@ int main(int argc, char *argv[])
 	vtkSmartPointer<grabBufferCamera> ctOffsetInteractorStyle = vtkSmartPointer<grabBufferCamera>::New();
 //end 3d object declarations
 
-	
+//start itk raw ct read
+	//Read in the raw data file
+	typedef itk::Image< unsigned short ,3>	ctRawType;
+	typedef itk::ImageFileReader<ctRawType> ctReaderType;
+
+	ctReaderType::Pointer ctRawReader = ctReaderType::New();
+	std::vector<vtkVolume*> ctVolumes;
+	ctRawReader->SetFileName(argv[1]);
+	ctRawReader->Update();
+	ctRawType::Pointer ctRawImage = ctRawReader->GetOutput();
+    //image->Print(std::cout ); //use to print image header data 
+//end itk raw ct read
 
 //start of volume setup from itk to vtk
 	//filter to send the raw data from itk to vtk
@@ -477,7 +512,6 @@ int main(int argc, char *argv[])
 	ctInlineRenderer->GetActiveCamera()->SetPosition(cameraPosition);
 	
 	//these two calls should update the window after the camera position is changed but the screen is still black until clicked on (which updates it someother way i guess)
-	
 	//grabs the orrientation of the inline camera to set the offset camera relative to it
 	double * inlineOrrientation = ctInlineRenderer->GetActiveCamera()->GetOrientation();//orrientation is given in pitch,yaw,roll
 //end inline render window setup*/
@@ -487,13 +521,12 @@ int main(int argc, char *argv[])
 	ctOffsetWindow->SetSize(500,500);
 	ctOffsetWindow->SetWindowName("offset");
 	ctOffsetInteractor->SetInteractorStyle(ctOffsetInteractorStyle);
-	
+
 	ctOffsetInteractor->SetRenderWindow(ctOffsetWindow);
 	ctOffsetRenderer->AddVolume(ctVolume);
 	ctOffsetRenderer->ResetCamera();
 	ctOffsetWindow->AddRenderer(ctOffsetRenderer);
 
-	
 	//applies the offset from the first camera and sets the viewing angle
 	cameraPosition[0] -= cubeParameterDifferences[0]/.79;
 	cameraPosition[1] -= cubeParameterDifferences[2]/.79;//vtk y is camera z so swap what we use to offset
@@ -512,20 +545,26 @@ int main(int argc, char *argv[])
 	//ctOffsetRenderer->Render();
 	ctOffsetWindow->Render();
 //start interactor style setup
-	ctInlineInteractorStyle->SetWindow(ctInlineWindow,xrayImageViewer,xrayImageViewer->GetInput(), ctOffsetRenderer,cubeParameterDifferences);
-	ctOffsetInteractorStyle->SetWindow(ctOffsetWindow,xrayImageViewer,xrayImageViewer->GetInput(),ctInlineRenderer,oppositeCubeParameterDifferences);
-	//make the timer event
 	ctInlineInteractor->Initialize();
 	ctOffsetInteractor->Initialize();
+	ctInlineInteractorStyle->SetWindow(ctInlineWindow,xrayImageViewer,xrayImageViewer->GetInput(),ctOffsetRenderer,cubeParameterDifferences,ctVolume);
+	ctOffsetInteractorStyle->SetWindow(ctOffsetWindow,xrayImageViewer,xrayImageViewer->GetInput(),ctInlineRenderer,oppositeCubeParameterDifferences,ctVolume);
+	
 	vtkSmartPointer<reRenderer> inlineToOffset = vtkSmartPointer<reRenderer>::New();
 	inlineToOffset->otherRenderer = ctOffsetWindow;
-	ctOffsetRenderer->AddObserver(vtkCommand::ModifiedEvent,inlineToOffset);
-	//interact->CreateRepeatingTimer(40);//testing how timer events work
+	ctInlineRenderer->AddObserver(vtkCommand::ModifiedEvent,inlineToOffset);
+
+	vtkSmartPointer<volumeSpinner> ctVolumeSpinner = vtkSmartPointer<volumeSpinner>::New();
+	ctVolumeSpinner->ctVolume = ctVolume;
+	ctVolumeSpinner->ctInlineWindow = ctInlineWindow;
+	ctVolumeSpinner->ctOffsetWindow = ctOffsetWindow;
+	ctInlineInteractor->CreateRepeatingTimer(40);//testing how timer events work
+	ctInlineInteractor->AddObserver(vtkCommand::TimerEvent,ctVolumeSpinner );
 
 	vtkSmartPointer<reRenderer> offsetToInline = vtkSmartPointer<reRenderer>::New();
 	offsetToInline->otherRenderer = ctInlineWindow;
 	ctOffsetRenderer->AddObserver(vtkCommand::ModifiedEvent,offsetToInline);
-	
+
 	ctOffsetRenderer->Render();
 	ctInlineRenderer->Render();
 //end interactor style setup*/
