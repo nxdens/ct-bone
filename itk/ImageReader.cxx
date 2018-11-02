@@ -214,7 +214,7 @@ class grabBufferActor : public vtkInteractorStyleTrackballActor
 			setImageData(im);
 
 			xrayCTImageBlender = vtkSmartPointer<vtkImageBlend>::New();
-			//xrayCTImageBlender->SetBlendModeToCompound();
+			//xrayCTImageBlender->SetBlendModeToCompound();//this doesnt seem to do anything
 			xrayCTImageBlender->AddInputData(im);
 			xrayCTImageBlender->AddInputData(xrayImageData);
 
@@ -272,20 +272,9 @@ class grabBufferActor : public vtkInteractorStyleTrackballActor
 				cout <<"okay" << endl;
 				setXray();
 			}
-			if(key == "q")
-			{
-				manipulateVolume();//crashes when called from the offset render window for some reason
-				ctRenderWindow->Render();
-			}
 			vtkInteractorStyleTrackballActor::OnKeyPress();
 		}
-	protected:
-		void manipulateVolume()
-		{
-			ctProp->AddOrientation(1,0,0);
-			ctProp->Update();
-			//Prop3DTransform //eventually
-		}
+
 
 };
 
@@ -333,7 +322,7 @@ public:
 	{
 		//cout << "modded" << endl;
 		//this is jagged when attached to the volume modified and i suspect that it is due to the fact that it gets called too often
-      	otherRenderer->Render();
+      	otherRenderer->Render();//this is a really slow action for some reason
 	}
 
 	vtkSmartPointer<vtkRenderWindow> otherRenderer;
@@ -349,9 +338,12 @@ class volumeSpinner :public vtkCommand
 		}
 		virtual void Execute(vtkObject * caller, unsigned long eventId, void * vtkNotUsed(callData))
 		{
-			if(eventId == vtkCommand::TimerEvent && eventId != vtkCommand::LeftButtonPressEvent)
+			if(eventId == vtkCommand::TimerEvent)
 			{
-				ctVolume->RotateX(2);//this rotates around the world axis
+				if(eventId != vtkCommand::LeftButtonPressEvent)
+				{
+					ctVolume->RotateX(2);//this rotates around the world axis
+				}
 				ctInlineWindow->Render();
 				ctOffsetWindow->Render();
 			}
@@ -550,6 +542,8 @@ int main(int argc, char *argv[])
 	ctInlineInteractorStyle->SetWindow(ctInlineWindow,xrayImageViewer,xrayImageViewer->GetInput(),ctOffsetRenderer,cubeParameterDifferences,ctVolume);
 	ctOffsetInteractorStyle->SetWindow(ctOffsetWindow,xrayImageViewer,xrayImageViewer->GetInput(),ctInlineRenderer,oppositeCubeParameterDifferences,ctVolume);
 	
+	//adds a timer event to move the bone independently and update the window
+	//the event should be stopped when the left mouse button is pressed
 	vtkSmartPointer<reRenderer> inlineToOffset = vtkSmartPointer<reRenderer>::New();
 	inlineToOffset->otherRenderer = ctOffsetWindow;
 	ctInlineRenderer->AddObserver(vtkCommand::ModifiedEvent,inlineToOffset);
