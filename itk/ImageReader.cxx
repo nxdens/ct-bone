@@ -428,10 +428,13 @@ int main(int argc, char *argv[])
 
 //start important 3d render object declarations
 	//would need to get the volume properties parameterized for multiple bones
+	std::vector<vtkVolume*> ctVolumes;
 	vtkSmartPointer<vtkVolume> ctVolume = vtkSmartPointer<vtkVolume>::New();
 	vtkSmartPointer<vtkSmartVolumeMapper> ctVolummeMapper = vtkSmartPointer<vtkSmartVolumeMapper>::New();
-	vtkSmartPointer<vtkVolumeProperty> ctVolumeProperty = vtkSmartPointer<vtkVolumeProperty>::New();
+
+	std::vector<vtkImageData*> ctImageDataVector;
 	vtkSmartPointer<vtkImageData> ctImageData = vtkSmartPointer<vtkImageData>::New();
+	ctImageDataVector.push_back(ctImageData);
 	//setup the main 3d window environment 
 	vtkSmartPointer<vtkRenderWindow> ctInlineWindow = vtkSmartPointer<vtkRenderWindow>::New();
 	vtkSmartPointer<vtkRenderer> ctInlineRenderer = vtkSmartPointer<vtkRenderer>::New();
@@ -442,15 +445,19 @@ int main(int argc, char *argv[])
 	vtkSmartPointer<vtkRenderWindow> ctOffsetWindow = vtkSmartPointer<vtkRenderWindow>::New();
 	vtkSmartPointer<vtkRenderWindowInteractor> ctOffsetInteractor = vtkSmartPointer<vtkRenderWindowInteractor>::New();
 	vtkSmartPointer<grabBufferCamera> ctOffsetInteractorStyle = vtkSmartPointer<grabBufferCamera>::New();
+
+	//needs this to be able to render the data since default opacity for everything is 0
+	vtkSmartPointer<vtkPiecewiseFunction> compositeOpacity = vtkSmartPointer<vtkPiecewiseFunction>::New();
+	//compositeOpacity->AddPoint(0.0,0.0);
+	//just sets everything to 1 can use multiple piecewise function points to threshold certain densities
+	compositeOpacity->AddPoint(100.0,1);
 //end 3d object declarations
 
 //start itk raw ct read
 	//Read in the raw data file
 	typedef itk::Image< unsigned short ,3>	ctRawType;
 	typedef itk::ImageFileReader<ctRawType> ctReaderType;
-
 	ctReaderType::Pointer ctRawReader = ctReaderType::New();
-	std::vector<vtkVolume*> ctVolumes;
 	ctRawReader->SetFileName(argv[1]);
 	ctRawReader->Update();
 	ctRawType::Pointer ctRawImage = ctRawReader->GetOutput();
@@ -466,21 +473,34 @@ int main(int argc, char *argv[])
 	ctITKtoVtk->SetInput(ctRawImage);
 	ctITKtoVtk->Update();//call this to update the pipeline
 	//copy the data from the filter to a mroe vtk friendly data format
-	ctImageData->ShallowCopy(ctITKtoVtk->GetOutput());
+	ctImageDataVector[0]->DeepCopy(ctITKtoVtk->GetOutput());//need to do deep copy to reuse the reader object
 	//set up the volume rendering properties
 	ctVolummeMapper->SetBlendModeToAverageIntensity();
 	ctVolummeMapper->SetRequestedRenderModeToGPU();
 	//pass the ct volumetric data to the mapper
-	ctVolummeMapper->SetInputData(ctImageData);
-	//needs this to be able to render the data since default opacity for everything is 0
-	vtkSmartPointer<vtkPiecewiseFunction> compositeOpacity = vtkSmartPointer<vtkPiecewiseFunction>::New();
-	//compositeOpacity->AddPoint(0.0,0.0);
-	//just sets everything to 1 can use multiple piecewise function points to threshold certain densities
-	compositeOpacity->AddPoint(100.0,1);
-	ctVolumeProperty->SetScalarOpacity(compositeOpacity);
+	ctVolummeMapper->SetInputData(ctImageDataVector[0]);
+	//ctVolummeMapper->SetFinalColorWindow(-.75); // this does some weird stuff but in theory should be able to increase brightness
 	ctVolume->SetMapper(ctVolummeMapper);
-	ctVolume->SetProperty(ctVolumeProperty);
+	ctVolume->GetProperty()->SetScalarOpacity(compositeOpacity);
 //end of volume set up*/
+
+//second volume
+	ctRawReader = ctReaderType::New();//seems like you need to make a new pointer everytime
+	ctRawReader->SetFileName("Lpatellaaxial_74x86x95x16LE.mhd");//set the reader to read a new file
+	ctRawReader->Update();
+	ctRawImage = ctRawReader->GetOutput();
+	ctITKtoVtk->SetInput(ctRawImage);
+	ctITKtoVtk->Update();//i think this will work
+	vtkSmartPointer<vtkImageData> ctData2 = vtkSmartPointer<vtkImageData>::New();//need this full statement cant just pass the pointer created for some reason probably garbage collection
+	ctImageDataVector.push_back(ctData2);
+	ctImageDataVector[1]->DeepCopy(ctITKtoVtk->GetOutput());
+	vtkSmartPointer<vtkVolume> ctVolume2 = vtkSmartPointer<vtkVolume>::New();
+	vtkSmartPointer<vtkSmartVolumeMapper> ctVolummeMapper2 = vtkSmartPointer<vtkSmartVolumeMapper>::New();
+	ctVolummeMapper2->SetBlendModeToAverageIntensity();
+	ctVolummeMapper2->SetRequestedRenderModeToGPU();
+	ctVolummeMapper2->SetInputData(ctImageDataVector[1]);
+	ctVolume2->SetMapper(ctVolummeMapper2);
+	ctVolume2->GetProperty()->SetScalarOpacity(compositeOpacity);
 
 //Start setting up inline render window
 	//ctOffsetWindow->OffScreenRenderingOn();//sets the second view offscreen if we want
@@ -492,7 +512,7 @@ int main(int argc, char *argv[])
 	ctInlineInteractor->SetInteractorStyle(ctInlineInteractorStyle);
 
 	ctInlineRenderer->AddVolume(ctVolume);
-
+	ctInlineRenderer->AddVolume(ctVolume2);
 	//sets the camera propeties based on the text files for the cameras
 	ctInlineRenderer->ResetCamera();
 	ctInlineRenderer->GetActiveCamera()->SetViewAngle(2*atan(.5*.79*500/inlineCube.cubeParameters[0]) * 180 /PI);
@@ -516,6 +536,7 @@ int main(int argc, char *argv[])
 
 	ctOffsetInteractor->SetRenderWindow(ctOffsetWindow);
 	ctOffsetRenderer->AddVolume(ctVolume);
+	ctOffsetRenderer->AddVolume(ctVolume2);
 	ctOffsetRenderer->ResetCamera();
 	ctOffsetWindow->AddRenderer(ctOffsetRenderer);
 
@@ -552,7 +573,7 @@ int main(int argc, char *argv[])
 	ctVolumeSpinner->ctVolume = ctVolume;
 	ctVolumeSpinner->ctInlineWindow = ctInlineWindow;
 	ctVolumeSpinner->ctOffsetWindow = ctOffsetWindow;
-	ctInlineInteractor->CreateRepeatingTimer(40);//testing how timer events work
+	//ctInlineInteractor->CreateRepeatingTimer(40);//testing how timer events work
 	ctInlineInteractor->AddObserver(vtkCommand::TimerEvent,ctVolumeSpinner );
 
 	vtkSmartPointer<reRenderer> offsetToInline = vtkSmartPointer<reRenderer>::New();
