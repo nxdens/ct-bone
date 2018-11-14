@@ -4,7 +4,7 @@
 #include "itkRGBPixel.h" //need this to use any sort of rgb 
 #include <itkImageToVTKImageFilter.h>
 #include "itkVTKImageToImageFilter.h"
-
+#include "itkThresholdImageFilter.h"
 //all the visualization includes
 #include <vtkSmartPointer.h>
 #include <vtkRenderer.h>
@@ -160,6 +160,14 @@ class grabBufferActor : public vtkInteractorStyleTrackballActor
 			im->Modified();
 			//im->SetInputData(ctPixelDataMatrix);//aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaahhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh why doesnt this just work
 		}
+		void startTimer()
+		{
+			this->Interactor->CreateRepeatingTimer(40);
+		}
+		void stopTimer()
+		{
+			this->Interactor->DestroyTimer();
+		}
 		void getMetric(unsigned char * matrx)//this blocks everthing but mostly because of the imageviewer2 just get rid of the visualization to fix that 
 		{
 			//gradient for the ct
@@ -272,6 +280,11 @@ class grabBufferActor : public vtkInteractorStyleTrackballActor
 				cout <<"okay" << endl;
 				setXray();
 			}
+			if(key == "d")
+			{
+				startTimer();
+			}
+
 			vtkInteractorStyleTrackballActor::OnKeyPress();
 		}
 
@@ -448,7 +461,7 @@ int main(int argc, char *argv[])
 
 	//needs this to be able to render the data since default opacity for everything is 0
 	vtkSmartPointer<vtkPiecewiseFunction> compositeOpacity = vtkSmartPointer<vtkPiecewiseFunction>::New();
-	//compositeOpacity->AddPoint(0.0,0.0);
+	compositeOpacity->AddPoint(99,0.0);
 	//just sets everything to 1 can use multiple piecewise function points to threshold certain densities
 	compositeOpacity->AddPoint(100.0,1);
 //end 3d object declarations
@@ -475,7 +488,7 @@ int main(int argc, char *argv[])
 	//copy the data from the filter to a mroe vtk friendly data format
 	ctImageDataVector[0]->DeepCopy(ctITKtoVtk->GetOutput());//need to do deep copy to reuse the reader object
 	//set up the volume rendering properties
-	ctVolummeMapper->SetBlendModeToAverageIntensity();
+	//ctVolummeMapper->SetBlendModeToAverageIntensity();
 	ctVolummeMapper->SetRequestedRenderModeToGPU();
 	//pass the ct volumetric data to the mapper
 	ctVolummeMapper->SetInputData(ctImageDataVector[0]);
@@ -496,11 +509,29 @@ int main(int argc, char *argv[])
 	ctImageDataVector[1]->DeepCopy(ctITKtoVtk->GetOutput());
 	vtkSmartPointer<vtkVolume> ctVolume2 = vtkSmartPointer<vtkVolume>::New();
 	vtkSmartPointer<vtkSmartVolumeMapper> ctVolummeMapper2 = vtkSmartPointer<vtkSmartVolumeMapper>::New();
-	ctVolummeMapper2->SetBlendModeToAverageIntensity();
+	//ctVolummeMapper2->SetBlendModeToAverageIntensity();
 	ctVolummeMapper2->SetRequestedRenderModeToGPU();
 	ctVolummeMapper2->SetInputData(ctImageDataVector[1]);
 	ctVolume2->SetMapper(ctVolummeMapper2);
 	ctVolume2->GetProperty()->SetScalarOpacity(compositeOpacity);
+
+//third volume
+	ctRawReader = ctReaderType::New();//seems like you need to make a new pointer everytime
+	ctRawReader->SetFileName("Ltibiaaxial_119x110x198x16LE.mhd");//set the reader to read a new file
+	ctRawReader->Update();
+	ctRawImage = ctRawReader->GetOutput();
+	ctITKtoVtk->SetInput(ctRawImage);
+	ctITKtoVtk->Update();//i think this will work
+	vtkSmartPointer<vtkImageData> ctData3 = vtkSmartPointer<vtkImageData>::New();//need this full statement cant just pass the pointer created for some reason probably garbage collection
+	ctImageDataVector.push_back(ctData3);
+	ctImageDataVector[2]->DeepCopy(ctITKtoVtk->GetOutput());
+	vtkSmartPointer<vtkVolume> ctVolume3 = vtkSmartPointer<vtkVolume>::New();
+	vtkSmartPointer<vtkSmartVolumeMapper> ctVolummeMapper3 = vtkSmartPointer<vtkSmartVolumeMapper>::New();
+	//ctVolummeMapper2->SetBlendModeToAverageIntensity();
+	ctVolummeMapper3->SetRequestedRenderModeToGPU();
+	ctVolummeMapper3->SetInputData(ctImageDataVector[2]);
+	ctVolume3->SetMapper(ctVolummeMapper3);
+	ctVolume3->GetProperty()->SetScalarOpacity(compositeOpacity);
 
 //Start setting up inline render window
 	//ctOffsetWindow->OffScreenRenderingOn();//sets the second view offscreen if we want
@@ -513,6 +544,7 @@ int main(int argc, char *argv[])
 
 	ctInlineRenderer->AddVolume(ctVolume);
 	ctInlineRenderer->AddVolume(ctVolume2);
+	ctInlineRenderer->AddVolume(ctVolume3);
 	//sets the camera propeties based on the text files for the cameras
 	ctInlineRenderer->ResetCamera();
 	ctInlineRenderer->GetActiveCamera()->SetViewAngle(2*atan(.5*.79*500/inlineCube.cubeParameters[0]) * 180 /PI);
@@ -537,6 +569,7 @@ int main(int argc, char *argv[])
 	ctOffsetInteractor->SetRenderWindow(ctOffsetWindow);
 	ctOffsetRenderer->AddVolume(ctVolume);
 	ctOffsetRenderer->AddVolume(ctVolume2);
+	ctOffsetRenderer->AddVolume(ctVolume3);
 	ctOffsetRenderer->ResetCamera();
 	ctOffsetWindow->AddRenderer(ctOffsetRenderer);
 
