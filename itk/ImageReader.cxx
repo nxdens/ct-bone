@@ -533,6 +533,11 @@ int main(int argc, char *argv[])
 	ctVolume3->SetMapper(ctVolummeMapper3);
 	ctVolume3->GetProperty()->SetScalarOpacity(compositeOpacity);
 
+//set the positions of the three bones so they look better to start
+	ctVolume2->SetPosition(100,100, 0);
+	ctVolume3->SetPosition(150, 150, 0);
+
+
 //Start setting up inline render window
 	//ctOffsetWindow->OffScreenRenderingOn();//sets the second view offscreen if we want
 	ctInlineWindow->AddRenderer(ctInlineRenderer);
