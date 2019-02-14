@@ -9,7 +9,7 @@ dsxGrabBufferActor::~dsxGrabBufferActor()
 }
 
 //this whole class needs cleaning up
-void dsxGrabBufferActor::SetWindow(vtkRenderWindow* ctWindow, vtkImageViewer2* xrayViewer, vtkImageData* xrayData, vtkRenderer* offset,std::vector<double> differences,vtkVolume * ctVolume )
+void dsxGrabBufferActor::SetWindow(vtkRenderWindow* ctWindow, vtkImageViewer2* xrayViewer, vtkImageData* xrayData, vtkRenderer* offset,std::vector<double> differences,dsxBone * tDsxBone)
 {
     ctRenderWindow = ctWindow;
     int* dim = ctWindow->GetSize();
@@ -21,8 +21,7 @@ void dsxGrabBufferActor::SetWindow(vtkRenderWindow* ctWindow, vtkImageViewer2* x
     xrayImageViewer = xrayViewer;
     otherRenderer = offset;
     cubeParametersDifs = differences;
-    ctProp = ctVolume;
-    ctVolume->RotateX(1);
+    tDsxBone->rotate(1,0,0);
     setXray();
 }
 
@@ -40,7 +39,7 @@ void dsxGrabBufferActor::setImageData(vtkImageData * im)// eventually switch thi
             currentPixel = static_cast<unsigned char*>(im->GetScalarPointer(i,j,0));
             if(ctPixelDataMatrix[(j*(width+1)+i)*3] != 0/*NULL*/)
             {
-                char intensity =ctPixelDataMatrix[(j*(width+1)+i)*3]*2;
+                char intensity = ctPixelDataMatrix[(j*(width+1)+i)*3]*2;
                 //cout << ctPixelDataMatrix[(j*(width+1)+i)*3] << " ";
                 //set different values to 0 to give different color to the image
                 //still need to figure out how to add opacity to the image

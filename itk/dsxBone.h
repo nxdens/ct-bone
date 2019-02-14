@@ -6,7 +6,7 @@
 #include "dsxPose.h"
 class dsxBone{
 public:
-	dsxBone();
+	dsxBone(vtkVolume * ctBoneVoxels);
 	~dsxBone();
 	 static dsxBone * New()
     {
@@ -14,10 +14,13 @@ public:
         return commander;
     }
 	void rotate(double roll,double yaw,double pitch);
-	void translate(double x,double y,double z);
+	void translate(double translateX,double translateY,double translateZ);
 	void scale(double c); //uniform scaling
-
+	void recordPose();
+	void restorePose();
+	dsxPose * getPose();
 private:
-	dsxPose * pose;
-	vtkVolume * dsxVoxels;
+	dsxPose * currentPose;
+	dsxPose oldPose;
+	vtkVolume * mCtBoneVoxels;
 }

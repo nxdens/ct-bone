@@ -11,15 +11,16 @@ public:
 	double * getPosition();
 	double * getRotation();
 	double getScale();
-	void translate(double x,double y,double z);
+	void translate(double translateX,double translateY,double translateZ);
 	void rotate(double roll,double yaw,double pitch);
-	void scale(double c);
+	void scale(double scaleFactor);
+	dsxPose * applyPose(dsxPose newPose);
+	//print function maybe?
 private:
 	//maybe transformation matrix?
-	double x,y,z; //position values
-	string filename;//mhd header file
-	double roll, yaw, pitch;//rotation values
-	double c;//scale 
+	double mTranslateX,mTranslateY,mTranslateZ; //position values
+	double mRoll, mYaw, mPitch;//rotation values
+	double mScaleFactor;//scale 
 
 
 }

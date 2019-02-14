@@ -180,6 +180,8 @@ int main(int argc, char *argv[])
     vtkSmartPointer<vtkVolume> ctVolume = vtkSmartPointer<vtkVolume>::New();
     vtkSmartPointer<vtkSmartVolumeMapper> ctVolummeMapper = vtkSmartPointer<vtkSmartVolumeMapper>::New();
     
+    ctDsxBone = dsxBone::dsxBone(ctVolume);
+
     std::vector<vtkImageData*> ctImageDataVector;
     vtkSmartPointer<vtkImageData> ctImageData = vtkSmartPointer<vtkImageData>::New();
     ctImageDataVector.push_back(ctImageData);
@@ -335,8 +337,8 @@ int main(int argc, char *argv[])
     //start interactor style setup
     ctInlineInteractor->Initialize();
     ctOffsetInteractor->Initialize();
-    ctInlineInteractorStyle->SetWindow(ctInlineWindow,xrayImageViewer,xrayImageViewer->GetInput(),ctOffsetRenderer,cubeParameterDifferences,ctVolume);
-    ctOffsetInteractorStyle->SetWindow(ctOffsetWindow,xrayImageViewer,xrayImageViewer->GetInput(),ctInlineRenderer,oppositeCubeParameterDifferences,ctVolume);
+    ctInlineInteractorStyle->SetWindow(ctInlineWindow,xrayImageViewer,xrayImageViewer->GetInput(),ctOffsetRenderer,cubeParameterDifferences,ctDsxBone);
+    ctOffsetInteractorStyle->SetWindow(ctOffsetWindow,xrayImageViewer,xrayImageViewer->GetInput(),ctInlineRenderer,oppositeCubeParameterDifferences,ctDsxBone);
     
     //adds a timer event to move the bone independently and update the window
     //the event should be stopped when the left mouse button is pressed
