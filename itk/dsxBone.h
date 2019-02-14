@@ -4,12 +4,20 @@
 #include <vtkVolumeMapper.h>
 #include <vtkSmartVolumeMapper.h>
 #include "dsxPose.h"
-class dsxPose{
+class dsxBone{
 public:
-	void rotate(roll,yaw,pitch);
-	void translate(x,y,z);
-	void scale(c);
+	dsxBone();
+	~dsxBone();
+	 static dsxBone * New()
+    {
+        dsxBone * commander = new dsxBone();
+        return commander;
+    }
+	void rotate(double roll,double yaw,double pitch);
+	void translate(double x,double y,double z);
+	void scale(double c); //uniform scaling
+
 private:
-	dsxPose pose;
-	vtkVolume * voxels;
+	dsxPose * pose;
+	vtkVolume * dsxVoxels;
 }
