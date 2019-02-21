@@ -21,7 +21,10 @@ void dsxGrabBufferActor::SetWindow(vtkRenderWindow* ctWindow, vtkImageViewer2* x
     xrayImageViewer = xrayViewer;
     otherRenderer = offset;
     cubeParametersDifs = differences;
+
     tDsxBone->rotate(1,0,0);
+    tDsxBone->recordPose();
+    mActorDsxBone = tDsxBone;
     setXray();
 }
 
@@ -58,7 +61,10 @@ void dsxGrabBufferActor::setImageData(vtkImageData * im)// eventually switch thi
     im->Modified();
     //im->SetInputData(ctPixelDataMatrix);//aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaahhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh why doesnt this just work
 }
-
+void dsxGrabBufferActor::resetPose()
+{
+    mActorDsxBone->restorePose();
+}
 void dsxGrabBufferActor::startTimer()
 {
     this->Interactor->CreateRepeatingTimer(40);

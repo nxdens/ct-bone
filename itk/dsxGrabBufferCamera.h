@@ -33,7 +33,7 @@ public:
     vtkTypeMacro(dsxGrabBufferCamera, vtkInteractorStyleTrackballCamera);
     vtkSmartPointer<dsxGrabBufferActor> trackballActorStyle;
 public:
-    void SetWindow(vtkRenderWindow* ctWindow, vtkImageViewer2* xrayViewer, vtkImageData* xrayData, vtkRenderer* otherRenderer,std::vector<double> differences,vtkVolume * ctVolume);
+    void SetWindow(vtkRenderWindow* ctWindow, vtkImageViewer2* xrayViewer, vtkImageData* xrayData, vtkRenderer* otherRenderer,std::vector<double> differences,dsxBone * tDsxBone);
 protected:
     void OnKeyPress() override;
 };

@@ -11,48 +11,55 @@ dsxPose::dsxPose()
 	mScaleFactor = 0;
 }
 
-dsxPose::~dsxPose();
+dsxPose::~dsxPose()
+{}
 
-void translate(double translateX,double translateY,double translateZ);
+void dsxPose::translate(double translateX,double translateY,double translateZ)
 {
 	this->mTranslateX = translateX;
 	this->mTranslateY = translateY;
 	this->mTranslateZ = translateZ;
+	mPosePositions[1] = translateX;
+	mPosePositions[2] = translateY;
+	mPosePositions[3] = translateZ;
 }
 
-void rotate(double roll,double yaw, double pitch)
+void dsxPose::rotate(double roll,double yaw, double pitch)
 {
 	this->mRoll = roll;
 	this->mYaw = yaw;
 	this->mPitch = pitch;
+	mPoseRotations[1] = roll;
+	mPoseRotations[2] = yaw;
+	mPoseRotations[3] = pitch;
 }
 
-void scale(double scaleFactor)
+void dsxPose::scale(double scaleFactor)
 {
 	this->mScaleFactor = scaleFactor;
 }
-double * getPosition()
+double * dsxPose::getPosition()
 {
-	return {this->mTranslateX,this->mTranslateY, this->mTranslateZ};
+	return mPosePositions;
 }
 
-double * getRotation()
+double * dsxPose::getRotation()
 {
-	return {this->mRoll,this->mYaw, this->mPitch};
+	return mPoseRotations;
 }
 
-double getScale()
+double dsxPose::getScale()
 {
 	return this->mScaleFactor;
 }
 
-dsxPose * applyPose(dsxPose newPose)
+dsxPose * dsxPose::applyPose(dsxPose newPose)
 {
 	double* tPosition = newPose.getPosition();
 	double* tOrrientation = newPose.getRotation();
 	double tScale = getScale();
-	this->translate(tPosition[0], tPosition[1],tPosition[2])
-	this->rotate(tOrrientation[0], tOrrientation[1],tOrrientation[2])
+	this->translate(tPosition[0], tPosition[1],tPosition[2]);
+	this->rotate(tOrrientation[0], tOrrientation[1],tOrrientation[2]);
 	this->scale(tScale);
-	return &this;
+	return this;
 }

@@ -8,11 +8,11 @@ dsxGrabBufferCamera::~dsxGrabBufferCamera()
 {
 }
 
-void dsxGrabBufferCamera::SetWindow(vtkRenderWindow* ctWindow, vtkImageViewer2* xrayViewer, vtkImageData* xrayData, vtkRenderer* otherRenderer,std::vector<double> differences,vtkVolume * ctVolume)
+void dsxGrabBufferCamera::SetWindow(vtkRenderWindow* ctWindow, vtkImageViewer2* xrayViewer, vtkImageData* xrayData, vtkRenderer* otherRenderer,std::vector<double> differences,dsxBone * tDsxBone)
 {
     ctWindow->Render();
     trackballActorStyle = vtkSmartPointer<dsxGrabBufferActor>::New();
-    trackballActorStyle->SetWindow(ctWindow,xrayViewer,xrayData,otherRenderer,differences,ctVolume);
+    trackballActorStyle->SetWindow(ctWindow,xrayViewer,xrayData,otherRenderer,differences,tDsxBone);
     //_renderWindow->GetInteractor()->SetInteractorStyle(trackballActorStyle);
 }
 

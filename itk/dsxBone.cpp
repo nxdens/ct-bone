@@ -1,40 +1,46 @@
 #include "dsxBone.h"
 
-dsxBone::dsxBone(vtkVolume * ctBoneVoxels);
+dsxBone::dsxBone() 
 {
-	currentPose = dsxPose::dsxPose();
-	mCtBoneVoxels = ctBoneVoxels;
 }
 
-dsxBone::~dsxBone();
+dsxBone::~dsxBone()
+{}
 
-void rotate(double roll,double yaw,double pitch)
+void dsxBone::rotate(double roll,double yaw,double pitch)
 {
-	pose->rotate(roll,yaw,pitch);
-	dsxVoxels->Roll(roll);
-	dsxVoxels->Yaw(yaw);
-	dsxVoxels->Pitch(pitch);
-	//dsxVoxels->AddOrientation(roll, yaw, pitch)
+	this->currentPose->rotate(roll,yaw,pitch);
+	mCtBoneVoxels->RotateX(roll);
+	mCtBoneVoxels->RotateY(yaw);
+	mCtBoneVoxels->RotateZ(pitch);
+	//mCtBoneVoxels->AddOrientation(roll, yaw, pitch)
 }
-void translate(double x,double y,double z)
+void dsxBone::translate(double x,double y,double z)
 {
-	dsxVoxels->AddPosition({x,y,z});
-	pose->translate(x,y,z);
+	mCtBoneVoxels->AddPosition(x,y,z);
+	currentPose->translate(x,y,z);
 }
-void scale(double c)
+void dsxBone::scale(double c)
 {
-	dsxVoxels->SetScale(c);
-	pose->scale(c)
+	mCtBoneVoxels->SetScale(c);
+	currentPose->scale(c);
 }
-void recordPose()
+dsxPose dsxBone::recordPose()
 {
-	old = *this->pose;
+	oldPose = *currentPose;
+	return oldPose;
 }
-void restorePose()
+void dsxBone::restorePose()
 {
 	currentPose = currentPose->applyPose(oldPose);
 }
-dsxPose * getPose()
+dsxPose * dsxBone::getPose()
 {
-	return this->currentPose;
+	return currentPose;
+}
+dsxPose * dsxBone::applyPose(dsxPose newPose)
+{
+	oldPose = *currentPose;
+	*currentPose = newPose;
+	return &oldPose;
 }

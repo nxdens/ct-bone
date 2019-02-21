@@ -60,7 +60,8 @@ using namespace cv;
 #include "dsxReRenderer.h"
 #include "dsxVolumeSpinner.h"
 #include "dsxXrayImage.h"
-
+#include "dsxBone.h"
+#include "dsxPose.h"
 /*
 	ToDo:
 	parameterize the volume setup and declaration so that we can have multiple volume objects probably create a new wrapper class to make it cleaner since most of the data is the same
@@ -180,7 +181,7 @@ int main(int argc, char *argv[])
     vtkSmartPointer<vtkVolume> ctVolume = vtkSmartPointer<vtkVolume>::New();
     vtkSmartPointer<vtkSmartVolumeMapper> ctVolummeMapper = vtkSmartPointer<vtkSmartVolumeMapper>::New();
     
-    ctDsxBone = dsxBone::dsxBone(ctVolume);
+    dsxBone * ctDsxBone = dsxBone::New();
 
     std::vector<vtkImageData*> ctImageDataVector;
     vtkSmartPointer<vtkImageData> ctImageData = vtkSmartPointer<vtkImageData>::New();

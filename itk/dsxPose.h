@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _DSX_POSE_
+#define _DSX_POSE_
 class dsxPose{
 public:
 	dsxPose();
@@ -14,6 +15,9 @@ public:
 	void translate(double translateX,double translateY,double translateZ);
 	void rotate(double roll,double yaw,double pitch);
 	void scale(double scaleFactor);
+	void recordPose();
+	void restorePose();
+	dsxPose * getPose();
 	dsxPose * applyPose(dsxPose newPose);
 	//print function maybe?
 private:
@@ -21,6 +25,8 @@ private:
 	double mTranslateX,mTranslateY,mTranslateZ; //position values
 	double mRoll, mYaw, mPitch;//rotation values
 	double mScaleFactor;//scale 
+	double mPoseRotations[3];
+	double mPosePositions[3]; 
 
-
-}
+};
+#endif
