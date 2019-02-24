@@ -9,8 +9,12 @@ dsxBone::dsxBone()
 	mCtCompositeOpacity = vtkSmartPointer<vtkPiecewiseFunction>::New();
 	mCtBoneVoxels->SetMapper(mCtBoneMapper);
 	mCtBoneMapper->SetRequestedRenderModeToGPU();
+
+	//needs this to be able to render the data since default opacity for everything is 0
 	mCtCompositeOpacity->AddPoint(99,0.0);
+	//just sets everything to 1 can use multiple piecewise function points to threshold certain densities
 	mCtCompositeOpacity->AddPoint(100.0,1);
+
 	mInternalTransformMatrix = vtkSmartPointer<vtkMatrix4x4>::New();
 }
 dsxBone::dsxBone(int totalFrames)
@@ -42,16 +46,22 @@ void dsxBone::translate(double translateX,double translateY,double translateZ)
 	mCtBoneVoxels->AddPosition(translateX,translateY,translateZ);
 	currentPose->translate(translateX,translateY,translateZ);
 }
+void dsxBone::setPosition(double setX, double setY, double setZ)
+{
+	mCtBoneVoxels->SetPosition(setX,setY,setZ);
+	currentPose->setPosition(setX,setY,setZ);
+}
 void dsxBone::scale(double scaleFactor)
 {
-	mCtBoneVoxels->SetScale(scaleFactor);
+	mCtBoneVoxels->SetScale(scaleFactor,scaleFactor,scaleFactor);
 	currentPose->scale(scaleFactor);
 }
 dsxPose dsxBone::recordPose()
 {
-	oldPose = *currentPose;
 	mCtBoneVoxels->ComputeMatrix();
 	mCtBoneVoxels->GetMatrix(mInternalTransformMatrix);
+	currentPose->setMatrix(mInternalTransformMatrix)
+	oldPose = *currentPose;
 	return oldPose;
 }
 void dsxBone::restorePose()
@@ -66,7 +76,19 @@ dsxPose * dsxBone::applyPose(dsxPose newPose)
 {
 	oldPose = *currentPose;
 	*currentPose = newPose;
+	
+	double * newPosition = newPose->getPosition();
+	double * newRotation = newPose->getRotation();
+	double newScale = newPose->getScale();
+	mCtBoneVoxels->SetPosition(newPosition[0], newPosition[1],newPosition[2]);
+	mCtBoneVoxels->SetOrrientation(newRotation[0], newRotation[1],newRotation[2]);
+	mCtBoneVoxels->SetScale(newScale,newScale,newScale);
+
 	return &oldPose;
+}
+dsxVolume* dsxBone::getVolume()
+{
+	return mCtBoneVoxels;
 }
 void dsxBone::saveCurrentPose()
 {

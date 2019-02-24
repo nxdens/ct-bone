@@ -7,7 +7,6 @@
 #include <vtkSmartVolumeMapper.h>
 #include <vtkPiecewiseFunction.h>
 #include <vtkImageData.h>
-#include <vtkMatrix4x4.h>
 #include "dsxPose.h"
 #include <iostream>
 #include <list>
@@ -23,7 +22,7 @@ public:
 	vtkImageData * mCtImageData;
 	std::list <dsxPose> poseSequence;
 	vtkPiecewiseFunction* mCtCompositeOpacity;
-	vtkMatrix4x4 * mInternalTransformMatrix;
+	int[16] mInternalTransformMatrix;
 	int mTotalFrames = 0;
 	dsxBone();
 	dsxBone(int totalFrames);
@@ -36,10 +35,12 @@ public:
 	void setBone(vtkImageData * ctImageData);
 	void rotate(double roll,double yaw,double pitch);
 	void translate(double translateX,double translateY,double translateZ);
+	void setPosition(double setX, double setY, double setZ);
 	void scale(double scaleFactor); //uniform scaling
 	dsxPose recordPose();
 	void restorePose();
 	void saveCurrentPose();
+	vtkVolume* getVolume();
 	void setPosition(double translateX,double translateY,double translateZ);
 };
 #endif

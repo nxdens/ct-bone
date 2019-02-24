@@ -181,11 +181,12 @@ int main(int argc, char *argv[])
     vtkSmartPointer<vtkVolume> ctVolume = vtkSmartPointer<vtkVolume>::New();
     vtkSmartPointer<vtkSmartVolumeMapper> ctVolummeMapper = vtkSmartPointer<vtkSmartVolumeMapper>::New();
     
-    dsxBone * ctDsxBone = dsxBone::New();
+    dsxBone * dsxBoneFemur = vtkSmartPointer<dsxBone>::New();
+    dsxBone * dsxBoneTibia = vtkSmartPointer<dsxBone>::New();
+    dsxBone * dsxBonePatella = vtkSmartPointer<dsxBone>::New();
 
-    std::vector<vtkImageData*> ctImageDataVector;
-    vtkSmartPointer<vtkImageData> ctImageData = vtkSmartPointer<vtkImageData>::New();
-    ctImageDataVector.push_back(ctImageData);
+    
+    
     //setup the main 3d window environment
     vtkSmartPointer<vtkRenderWindow> ctInlineWindow = vtkSmartPointer<vtkRenderWindow>::New();
     vtkSmartPointer<vtkRenderer> ctInlineRenderer = vtkSmartPointer<vtkRenderer>::New();
@@ -196,13 +197,18 @@ int main(int argc, char *argv[])
     vtkSmartPointer<vtkRenderWindow> ctOffsetWindow = vtkSmartPointer<vtkRenderWindow>::New();
     vtkSmartPointer<vtkRenderWindowInteractor> ctOffsetInteractor = vtkSmartPointer<vtkRenderWindowInteractor>::New();
     vtkSmartPointer<dsxGrabBufferCamera> ctOffsetInteractorStyle = vtkSmartPointer<dsxGrabBufferCamera>::New();
-    
+    /* old stoff
     //needs this to be able to render the data since default opacity for everything is 0
     vtkSmartPointer<vtkPiecewiseFunction> compositeOpacity = vtkSmartPointer<vtkPiecewiseFunction>::New();
     compositeOpacity->AddPoint(99,0.0);
     //just sets everything to 1 can use multiple piecewise function points to threshold certain densities
     compositeOpacity->AddPoint(100.0,1);
     //end 3d object declarations
+    */
+
+    std::vector<vtkImageData*> ctImageDataVector;
+    vtkSmartPointer<vtkImageData> ctImageData = vtkSmartPointer<vtkImageData>::New();
+    ctImageDataVector.push_back(ctImageData);
     
     //start itk raw ct read
     //Read in the raw data file
@@ -224,6 +230,8 @@ int main(int argc, char *argv[])
     ctITKtoVtk->SetInput(ctRawImage);
     ctITKtoVtk->Update();//call this to update the pipeline
     //copy the data from the filter to a mroe vtk friendly data format
+    dsxBoneFemur->setBone(ctITKtoVtk->GetOutput());
+    /* old setup
     ctImageDataVector[0]->DeepCopy(ctITKtoVtk->GetOutput());//need to do deep copy to reuse the reader object
     vtkSmartPointer<vtkPolyDataAlgorithm> ctPoly = vtkSmartPointer<vtkPolyDataAlgorithm>::New();
     ctPoly->AddInputData(ctImageDataVector[0]);
@@ -244,7 +252,9 @@ int main(int argc, char *argv[])
     ctRawReader->Update();
     ctRawImage = ctRawReader->GetOutput();
     ctITKtoVtk->SetInput(ctRawImage);
-    ctITKtoVtk->Update();//i think this will work
+    ctITKtoVtk->Update();//this tells the reader to recheck the data for the new file that we set above
+    dsxBonePatella->setBone(ctITKtoVtk->GetOutput());
+    /*
     vtkSmartPointer<vtkImageData> ctData2 = vtkSmartPointer<vtkImageData>::New();//need this full statement cant just pass the pointer created for some reason probably garbage collection
     ctImageDataVector.push_back(ctData2);
     ctImageDataVector[1]->DeepCopy(ctITKtoVtk->GetOutput());
@@ -254,7 +264,7 @@ int main(int argc, char *argv[])
     ctVolummeMapper2->SetRequestedRenderModeToGPU();
     ctVolummeMapper2->SetInputData(ctImageDataVector[1]);
     ctVolume2->SetMapper(ctVolummeMapper2);
-    ctVolume2->GetProperty()->SetScalarOpacity(compositeOpacity);
+    ctVolume2->GetProperty()->SetScalarOpacity(compositeOpacity);*/
     
     //third volume
     ctRawReader = ctReaderType::New();//seems like you need to make a new pointer everytime
@@ -263,6 +273,8 @@ int main(int argc, char *argv[])
     ctRawImage = ctRawReader->GetOutput();
     ctITKtoVtk->SetInput(ctRawImage);
     ctITKtoVtk->Update();//i think this will work
+    dsxBoneTibia->setBone(ctITKtoVtk->GetOutput());
+    /*
     vtkSmartPointer<vtkImageData> ctData3 = vtkSmartPointer<vtkImageData>::New();//need this full statement cant just pass the pointer created for some reason probably garbage collection
     ctImageDataVector.push_back(ctData3);
     ctImageDataVector[2]->DeepCopy(ctITKtoVtk->GetOutput());
@@ -272,11 +284,11 @@ int main(int argc, char *argv[])
     ctVolummeMapper3->SetRequestedRenderModeToGPU();
     ctVolummeMapper3->SetInputData(ctImageDataVector[2]);
     ctVolume3->SetMapper(ctVolummeMapper3);
-    ctVolume3->GetProperty()->SetScalarOpacity(compositeOpacity);
+    ctVolume3->GetProperty()->SetScalarOpacity(compositeOpacity);*/
     
     //set the positions of the three bones so they look better to start
-    ctVolume2->SetPosition(100,100, 0);
-    ctVolume3->SetPosition(150, 150, 0);
+    dsxBonePatella->SetPosition(100,100, 0);
+    dsxBoneTibia->SetPosition(150, 150, 0);
     
     //Start setting up inline render window
     //ctOffsetWindow->OffScreenRenderingOn();//sets the second view offscreen if we want
@@ -287,9 +299,9 @@ int main(int argc, char *argv[])
     ctInlineInteractor->SetRenderWindow(ctInlineWindow);
     ctInlineInteractor->SetInteractorStyle(ctInlineInteractorStyle);
     
-    ctInlineRenderer->AddVolume(ctVolume);
-    ctInlineRenderer->AddVolume(ctVolume2);
-    ctInlineRenderer->AddVolume(ctVolume3);
+    ctInlineRenderer->AddVolume(dsxBoneFemur->getVolume());
+    ctInlineRenderer->AddVolume(dsxBonePatella->getVolume());
+    ctInlineRenderer->AddVolume(dsxBoneTibia->getVolume());
     //sets the camera propeties based on the text files for the cameras
     ctInlineRenderer->ResetCamera();
     ctInlineRenderer->GetActiveCamera()->SetViewAngle(2*atan(.5*.79*500/inlineImage.getCubeParameterAt(0)) * 180 /PI);
@@ -312,9 +324,9 @@ int main(int argc, char *argv[])
     ctOffsetInteractor->SetInteractorStyle(ctOffsetInteractorStyle);
     
     ctOffsetInteractor->SetRenderWindow(ctOffsetWindow);
-    ctOffsetRenderer->AddVolume(ctVolume);
-    ctOffsetRenderer->AddVolume(ctVolume2);
-    ctOffsetRenderer->AddVolume(ctVolume3);
+    ctOffsetRenderer->AddVolume(dsxBoneFemur->getVolume());
+    ctOffsetRenderer->AddVolume(dsxBonePatella->getVolume());
+    ctOffsetRenderer->AddVolume(dsxBoneTibia->getVolume());
     ctOffsetRenderer->ResetCamera();
     ctOffsetWindow->AddRenderer(ctOffsetRenderer);
     
@@ -338,8 +350,8 @@ int main(int argc, char *argv[])
     //start interactor style setup
     ctInlineInteractor->Initialize();
     ctOffsetInteractor->Initialize();
-    ctInlineInteractorStyle->SetWindow(ctInlineWindow,xrayImageViewer,xrayImageViewer->GetInput(),ctOffsetRenderer,cubeParameterDifferences,ctDsxBone);
-    ctOffsetInteractorStyle->SetWindow(ctOffsetWindow,xrayImageViewer,xrayImageViewer->GetInput(),ctInlineRenderer,oppositeCubeParameterDifferences,ctDsxBone);
+    ctInlineInteractorStyle->SetWindow(ctInlineWindow,xrayImageViewer,xrayImageViewer->GetInput(),ctOffsetRenderer,cubeParameterDifferences,dsxBone);
+    ctOffsetInteractorStyle->SetWindow(ctOffsetWindow,xrayImageViewer,xrayImageViewer->GetInput(),ctInlineRenderer,oppositeCubeParameterDifferences,dsxBone);
     
     //adds a timer event to move the bone independently and update the window
     //the event should be stopped when the left mouse button is pressed
@@ -350,7 +362,7 @@ int main(int argc, char *argv[])
     
     //first spinner
     vtkSmartPointer<dsxVolumeSpinner> ctVolumeSpinner = vtkSmartPointer<dsxVolumeSpinner>::New();
-    ctVolumeSpinner->ctVolume = ctVolume;
+    ctVolumeSpinner->ctVolume = dsxBoneTibia->getVolume;
     ctVolumeSpinner->ctInlineWindow = ctInlineWindow;
     ctVolumeSpinner->ctOffsetWindow = ctOffsetWindow;
     //ctInlineInteractor->CreateRepeatingTimer(40);//testing how timer events work

@@ -16,6 +16,15 @@ dsxPose::~dsxPose()
 
 void dsxPose::translate(double translateX,double translateY,double translateZ)
 {
+	this->mTranslateX += translateX;
+	this->mTranslateY += translateY;
+	this->mTranslateZ += translateZ;
+	mPosePositions[1] += translateX;
+	mPosePositions[2] += translateY;
+	mPosePositions[3] += translateZ;
+}
+void dsxPose::setPosition(double setX, double setY, double setZ)
+{
 	this->mTranslateX = translateX;
 	this->mTranslateY = translateY;
 	this->mTranslateZ = translateZ;
@@ -23,15 +32,14 @@ void dsxPose::translate(double translateX,double translateY,double translateZ)
 	mPosePositions[2] = translateY;
 	mPosePositions[3] = translateZ;
 }
-
 void dsxPose::rotate(double roll,double yaw, double pitch)
 {
-	this->mRoll = roll;
-	this->mYaw = yaw;
-	this->mPitch = pitch;
-	mPoseRotations[1] = roll;
-	mPoseRotations[2] = yaw;
-	mPoseRotations[3] = pitch;
+	this->mRoll += roll;
+	this->mYaw += yaw;
+	this->mPitch += pitch;
+	mPoseRotations[1] += roll;
+	mPoseRotations[2] += yaw;
+	mPoseRotations[3] += pitch;
 }
 
 void dsxPose::scale(double scaleFactor)
@@ -62,4 +70,12 @@ dsxPose * dsxPose::applyPose(dsxPose newPose)
 	this->rotate(tOrrientation[0], tOrrientation[1],tOrrientation[2]);
 	this->scale(tScale);
 	return this;
+}
+
+void dsxPose::saveMatrix(int * transformMatrix)
+{
+	for(int i = 0; i <16; i++)
+	{
+		mInternalTransformMatrix[i] = transformMatrix[i];
+	}
 }
