@@ -165,8 +165,7 @@ int main(int argc, char *argv[])
     vtkSmartPointer<vtkImageViewer2> xrayImageViewer2 = vtkSmartPointer<vtkImageViewer2>::New();
     xrayImageViewer2->SetInputData(offsetImageData);
     xrayImageViewer2->GetRenderer()->ResetCamera();
-    vtkSmartPointer<dsxTiffMovie> myInteractorStyle2 =
-    vtkSmartPointer<dsxTiffMovie>::New();
+    vtkSmartPointer<dsxTiffMovie> myInteractorStyle2 = vtkSmartPointer<dsxTiffMovie>::New();
     myInteractorStyle2->setImageViewer(xrayImageViewer2);
     xrayImageViewer2->SetupInteractor(xrayWindowInteractor2);
     xrayWindowInteractor2->SetInteractorStyle(myInteractorStyle2);
@@ -181,9 +180,9 @@ int main(int argc, char *argv[])
     vtkSmartPointer<vtkVolume> ctVolume = vtkSmartPointer<vtkVolume>::New();
     vtkSmartPointer<vtkSmartVolumeMapper> ctVolummeMapper = vtkSmartPointer<vtkSmartVolumeMapper>::New();
     
-    dsxBone * dsxBoneFemur = vtkSmartPointer<dsxBone>::New();
-    dsxBone * dsxBoneTibia = vtkSmartPointer<dsxBone>::New();
-    dsxBone * dsxBonePatella = vtkSmartPointer<dsxBone>::New();
+    vtkSmartPointer<dsxBone> dsxBoneFemur = vtkSmartPointer<dsxBone>::New();
+    vtkSmartPointer<dsxBone> dsxBoneTibia = vtkSmartPointer<dsxBone>::New();
+    vtkSmartPointer<dsxBone> dsxBonePatella = vtkSmartPointer<dsxBone>::New();
 
     
     
@@ -205,10 +204,6 @@ int main(int argc, char *argv[])
     compositeOpacity->AddPoint(100.0,1);
     //end 3d object declarations
     */
-
-    std::vector<vtkImageData*> ctImageDataVector;
-    vtkSmartPointer<vtkImageData> ctImageData = vtkSmartPointer<vtkImageData>::New();
-    ctImageDataVector.push_back(ctImageData);
     
     //start itk raw ct read
     //Read in the raw data file
@@ -287,8 +282,8 @@ int main(int argc, char *argv[])
     ctVolume3->GetProperty()->SetScalarOpacity(compositeOpacity);*/
     
     //set the positions of the three bones so they look better to start
-    dsxBonePatella->SetPosition(100,100, 0);
-    dsxBoneTibia->SetPosition(150, 150, 0);
+    dsxBonePatella->setPosition(100,100, 0);
+    dsxBoneTibia->setPosition(150, 150, 0);
     
     //Start setting up inline render window
     //ctOffsetWindow->OffScreenRenderingOn();//sets the second view offscreen if we want
@@ -350,8 +345,8 @@ int main(int argc, char *argv[])
     //start interactor style setup
     ctInlineInteractor->Initialize();
     ctOffsetInteractor->Initialize();
-    ctInlineInteractorStyle->SetWindow(ctInlineWindow,xrayImageViewer,xrayImageViewer->GetInput(),ctOffsetRenderer,cubeParameterDifferences,dsxBone);
-    ctOffsetInteractorStyle->SetWindow(ctOffsetWindow,xrayImageViewer,xrayImageViewer->GetInput(),ctInlineRenderer,oppositeCubeParameterDifferences,dsxBone);
+    ctInlineInteractorStyle->SetWindow(ctInlineWindow,xrayImageViewer,xrayImageViewer->GetInput(),ctOffsetRenderer,cubeParameterDifferences,dsxBoneFemur);
+    ctOffsetInteractorStyle->SetWindow(ctOffsetWindow,xrayImageViewer,xrayImageViewer->GetInput(),ctInlineRenderer,oppositeCubeParameterDifferences,dsxBoneFemur);
     
     //adds a timer event to move the bone independently and update the window
     //the event should be stopped when the left mouse button is pressed
@@ -362,7 +357,7 @@ int main(int argc, char *argv[])
     
     //first spinner
     vtkSmartPointer<dsxVolumeSpinner> ctVolumeSpinner = vtkSmartPointer<dsxVolumeSpinner>::New();
-    ctVolumeSpinner->ctVolume = dsxBoneTibia->getVolume;
+    ctVolumeSpinner->ctVolume = dsxBoneTibia->getVolume();
     ctVolumeSpinner->ctInlineWindow = ctInlineWindow;
     ctVolumeSpinner->ctOffsetWindow = ctOffsetWindow;
     //ctInlineInteractor->CreateRepeatingTimer(40);//testing how timer events work

@@ -25,12 +25,12 @@ void dsxPose::translate(double translateX,double translateY,double translateZ)
 }
 void dsxPose::setPosition(double setX, double setY, double setZ)
 {
-	this->mTranslateX = translateX;
-	this->mTranslateY = translateY;
-	this->mTranslateZ = translateZ;
-	mPosePositions[1] = translateX;
-	mPosePositions[2] = translateY;
-	mPosePositions[3] = translateZ;
+	this->mTranslateX = setX;
+	this->mTranslateY = setY;
+	this->mTranslateZ = setZ;
+	mPosePositions[1] = setX;
+	mPosePositions[2] = setY;
+	mPosePositions[3] = setZ;
 }
 void dsxPose::rotate(double roll,double yaw, double pitch)
 {
@@ -72,7 +72,7 @@ dsxPose * dsxPose::applyPose(dsxPose newPose)
 	return this;
 }
 
-void dsxPose::saveMatrix(int * transformMatrix)
+void dsxPose::saveMatrix(double * transformMatrix)
 {
 	for(int i = 0; i <16; i++)
 	{

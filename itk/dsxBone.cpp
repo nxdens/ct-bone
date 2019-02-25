@@ -14,8 +14,8 @@ dsxBone::dsxBone()
 	mCtCompositeOpacity->AddPoint(99,0.0);
 	//just sets everything to 1 can use multiple piecewise function points to threshold certain densities
 	mCtCompositeOpacity->AddPoint(100.0,1);
-
-	mInternalTransformMatrix = vtkSmartPointer<vtkMatrix4x4>::New();
+	mCtBoneVoxels->GetProperty()->SetScalarOpacity(mCtCompositeOpacity);
+	//mInternalTransformMatrix = vtkSmartPointer<vtkMatrix4x4>::New();
 }
 dsxBone::dsxBone(int totalFrames)
 {
@@ -29,7 +29,6 @@ void dsxBone::setBone(vtkImageData * ctImageData)
 {
 	mCtImageData->DeepCopy(ctImageData);
 	mCtBoneMapper->SetInputData(mCtImageData);
-	mCtBoneVoxels->GetProperty()->SetScalarOpacity(mCtCompositeOpacity);
 	//maybe get the initial position from this?
 }
 
@@ -60,7 +59,7 @@ dsxPose dsxBone::recordPose()
 {
 	mCtBoneVoxels->ComputeMatrix();
 	mCtBoneVoxels->GetMatrix(mInternalTransformMatrix);
-	currentPose->setMatrix(mInternalTransformMatrix)
+	currentPose->saveMatrix(mInternalTransformMatrix);
 	oldPose = *currentPose;
 	return oldPose;
 }
@@ -77,16 +76,16 @@ dsxPose * dsxBone::applyPose(dsxPose newPose)
 	oldPose = *currentPose;
 	*currentPose = newPose;
 	
-	double * newPosition = newPose->getPosition();
-	double * newRotation = newPose->getRotation();
-	double newScale = newPose->getScale();
+	double * newPosition = newPose.getPosition();
+	double * newRotation = newPose.getRotation();
+	double newScale = newPose.getScale();
 	mCtBoneVoxels->SetPosition(newPosition[0], newPosition[1],newPosition[2]);
-	mCtBoneVoxels->SetOrrientation(newRotation[0], newRotation[1],newRotation[2]);
+	mCtBoneVoxels->SetOrientation(newRotation[0], newRotation[1],newRotation[2]);
 	mCtBoneVoxels->SetScale(newScale,newScale,newScale);
 
 	return &oldPose;
 }
-dsxVolume* dsxBone::getVolume()
+vtkVolume * dsxBone::getVolume()
 {
 	return mCtBoneVoxels;
 }

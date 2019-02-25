@@ -20,7 +20,7 @@ public:
 	void restorePose();
 	dsxPose * getPose();
 	dsxPose * applyPose(dsxPose newPose);
-	void saveMatrix();//deep copy
+	void saveMatrix(double * transformMatrix);//deep copy
 	//print function maybe?
 private:
 	//maybe transformation matrix?
@@ -29,7 +29,7 @@ private:
 	double mScaleFactor;//scale 
 	double mPoseRotations[3];
 	double mPosePositions[3]; 
-	int[16] mInternalTransformMatrix;
+	double mInternalTransformMatrix[16];
 
 };
 #endif

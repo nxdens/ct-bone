@@ -10,26 +10,26 @@
 #include "dsxPose.h"
 #include <iostream>
 #include <list>
-class dsxBone
+class dsxBone : public vtkVolume
 {
 public:
 	dsxPose * applyPose(dsxPose newPose);
 	dsxPose * getPose();
 	dsxPose * currentPose;
 	dsxPose oldPose;
-	vtkVolume * mCtBoneVoxels;
-	vtkSmartVolumeMapper * mCtBoneMapper;
-	vtkImageData * mCtImageData;
+	vtkSmartPointer<vtkVolume> mCtBoneVoxels;
+	vtkSmartPointer<vtkSmartVolumeMapper> mCtBoneMapper;
+	vtkSmartPointer<vtkImageData> mCtImageData;
 	std::list <dsxPose> poseSequence;
-	vtkPiecewiseFunction* mCtCompositeOpacity;
-	int[16] mInternalTransformMatrix;
+	vtkSmartPointer<vtkPiecewiseFunction> mCtCompositeOpacity;
+	double mInternalTransformMatrix[16];
 	int mTotalFrames = 0;
 	dsxBone();
 	dsxBone(int totalFrames);
 	~dsxBone();
 	static dsxBone * New()
 	{
-		dsxBone *ctBone = new dsxBone();
+		dsxBone * ctBone = new dsxBone();
 		return ctBone;
 	}
 	void setBone(vtkImageData * ctImageData);
@@ -41,6 +41,5 @@ public:
 	void restorePose();
 	void saveCurrentPose();
 	vtkVolume* getVolume();
-	void setPosition(double translateX,double translateY,double translateZ);
 };
 #endif

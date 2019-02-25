@@ -23,7 +23,7 @@ void dsxGrabBufferActor::SetWindow(vtkRenderWindow* ctWindow, vtkImageViewer2* x
     cubeParametersDifs = differences;
 
     tDsxBone->rotate(1,0,0);
-    tDsxBone->recordPose();
+    //tDsxBone->recordPose();
     mActorDsxBone = tDsxBone;
     setXray();
 }
