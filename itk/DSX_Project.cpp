@@ -226,20 +226,6 @@ int main(int argc, char *argv[])
     ctITKtoVtk->Update();//call this to update the pipeline
     //copy the data from the filter to a mroe vtk friendly data format
     dsxBoneFemur->setBone(ctITKtoVtk->GetOutput());
-    /* old setup
-    ctImageDataVector[0]->DeepCopy(ctITKtoVtk->GetOutput());//need to do deep copy to reuse the reader object
-    vtkSmartPointer<vtkPolyDataAlgorithm> ctPoly = vtkSmartPointer<vtkPolyDataAlgorithm>::New();
-    ctPoly->AddInputData(ctImageDataVector[0]);
-    
-    //set up the volume rendering properties
-    //ctVolummeMapper->SetBlendModeToAverageIntensity();
-    ctVolummeMapper->SetRequestedRenderModeToGPU();
-    //pass the ct volumetric data to the mapper
-    ctVolummeMapper->SetInputData(ctImageDataVector[0]);
-    //ctVolummeMapper->SetFinalColorWindow(-.75); // this does some weird stuff but in theory should be able to increase brightness
-    ctVolume->SetMapper(ctVolummeMapper);
-    ctVolume->GetProperty()->SetScalarOpacity(compositeOpacity);
-    //end of volume set up*/
     
     //second volume
     ctRawReader = ctReaderType::New();//seems like you need to make a new pointer everytime
@@ -249,17 +235,6 @@ int main(int argc, char *argv[])
     ctITKtoVtk->SetInput(ctRawImage);
     ctITKtoVtk->Update();//this tells the reader to recheck the data for the new file that we set above
     dsxBonePatella->setBone(ctITKtoVtk->GetOutput());
-    /*
-    vtkSmartPointer<vtkImageData> ctData2 = vtkSmartPointer<vtkImageData>::New();//need this full statement cant just pass the pointer created for some reason probably garbage collection
-    ctImageDataVector.push_back(ctData2);
-    ctImageDataVector[1]->DeepCopy(ctITKtoVtk->GetOutput());
-    vtkSmartPointer<vtkVolume> ctVolume2 = vtkSmartPointer<vtkVolume>::New();
-    vtkSmartPointer<vtkSmartVolumeMapper> ctVolummeMapper2 = vtkSmartPointer<vtkSmartVolumeMapper>::New();
-    //ctVolummeMapper2->SetBlendModeToAverageIntensity();
-    ctVolummeMapper2->SetRequestedRenderModeToGPU();
-    ctVolummeMapper2->SetInputData(ctImageDataVector[1]);
-    ctVolume2->SetMapper(ctVolummeMapper2);
-    ctVolume2->GetProperty()->SetScalarOpacity(compositeOpacity);*/
     
     //third volume
     ctRawReader = ctReaderType::New();//seems like you need to make a new pointer everytime
@@ -269,17 +244,6 @@ int main(int argc, char *argv[])
     ctITKtoVtk->SetInput(ctRawImage);
     ctITKtoVtk->Update();//i think this will work
     dsxBoneTibia->setBone(ctITKtoVtk->GetOutput());
-    /*
-    vtkSmartPointer<vtkImageData> ctData3 = vtkSmartPointer<vtkImageData>::New();//need this full statement cant just pass the pointer created for some reason probably garbage collection
-    ctImageDataVector.push_back(ctData3);
-    ctImageDataVector[2]->DeepCopy(ctITKtoVtk->GetOutput());
-    vtkSmartPointer<vtkVolume> ctVolume3 = vtkSmartPointer<vtkVolume>::New();
-    vtkSmartPointer<vtkSmartVolumeMapper> ctVolummeMapper3 = vtkSmartPointer<vtkSmartVolumeMapper>::New();
-    //ctVolummeMapper2->SetBlendModeToAverageIntensity();
-    ctVolummeMapper3->SetRequestedRenderModeToGPU();
-    ctVolummeMapper3->SetInputData(ctImageDataVector[2]);
-    ctVolume3->SetMapper(ctVolummeMapper3);
-    ctVolume3->GetProperty()->SetScalarOpacity(compositeOpacity);*/
     
     //set the positions of the three bones so they look better to start
     dsxBonePatella->setPosition(100,100, 0);
