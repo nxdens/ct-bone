@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _DSX_POSE_
+#define _DSX_POSE_
 class dsxPose{
 public:
 	dsxPose();
@@ -11,15 +12,24 @@ public:
 	double * getPosition();
 	double * getRotation();
 	double getScale();
-	void translate(double x,double y,double z);
+	void translate(double translateX,double translateY,double translateZ);
+	void setPosition(double setX, double setY, double setZ);
 	void rotate(double roll,double yaw,double pitch);
-	void scale(double c);
+	void scale(double scaleFactor);
+	void recordPose();
+	void restorePose();
+	dsxPose * getPose();
+	dsxPose * applyPose(dsxPose newPose);
+	void saveMatrix(double * transformMatrix);//deep copy
+	//print function maybe?
 private:
 	//maybe transformation matrix?
-	double x,y,z; //position values
-	string filename;//mhd header file
-	double roll, yaw, pitch;//rotation values
-	double c;//scale 
+	double mTranslateX,mTranslateY,mTranslateZ; //position values
+	double mRoll, mYaw, mPitch;//rotation values
+	double mScaleFactor;//scale 
+	double mPoseRotations[3];
+	double mPosePositions[3]; 
+	double mInternalTransformMatrix[16];
 
-
-}
+};
+#endif

@@ -33,6 +33,9 @@
 #include <fstream>
 #include <vector>
 #include <chrono>
+
+#include "dsxBone.h"
+#include "dsxPose.h"
 #define PI 3.14159265
 using namespace cv;
 
@@ -63,9 +66,9 @@ protected:
     Mat src_grayXray, grad_xXray, grad_yXray;
     Mat abs_grad_xXray, abs_grad_yXray;
     vtkSmartPointer<vtkImageViewer2> xrayImageViewer;
-    
+    dsxBone * mActorDsxBone;
 public:
-    void SetWindow(vtkRenderWindow * ctWindow, vtkImageViewer2 * xrayViewer, vtkImageData * xrayData, vtkRenderer * offset,std::vector<double> differences,vtkVolume * ctVolume );
+    void SetWindow(vtkRenderWindow * ctWindow, vtkImageViewer2 * xrayViewer, vtkImageData * xrayData, vtkRenderer * offset,std::vector<double> differences,dsxBone * tDsxBone );
     void setImageData(vtkImageData * im);// eventually switch this to window to image filter instaed of this jank
     void startTimer();
     void stopTimer();
@@ -74,6 +77,7 @@ public:
     void captureBuffer();
     void setXray();
     void OnKeyPress() override;
+    void dsxGrabBufferActor::resetPose();
 };
 
 
