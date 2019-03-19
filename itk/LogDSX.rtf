@@ -1,0 +1,111 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1671\cocoasubrtf200
+{\fonttbl\f0\fmodern\fcharset0 Courier-Bold;\f1\fmodern\fcharset0 Courier;\f2\fmodern\fcharset0 Courier-Oblique;
+}
+{\colortbl;\red255\green255\blue255;\red0\green0\blue0;\red255\green255\blue255;}
+{\*\expandedcolortbl;;\csgenericrgb\c0\c0\c0;\csgenericrgb\c100000\c100000\c100000;}
+\margl1440\margr1440\vieww10800\viewh8400\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\b\fs24 \cf0 \'97 Log of DSX BoneZone Project \'97\
+
+\f1\b0 \
+							   \
+
+\f0\b next
+\f1\b0 	
+\f2\i Make new viewport for correlation images dx and dy, bone in red,\
+	with readout of metric, controlled by inline or offset trackball.
+\f1\i0 \
+	
+\f2\i Precompute 2D dsx images in dsxXrayImage
+\f1\i0 \
+	
+\f2\i Use slider to select frame.\
+	Figure out the cube parameter difference math.\
+	New object for both inline and offset cubes
+\f0\i0\b \
+\
+32 - 
+\f2\i\b0 New function project->RunMultiWindowSystem with Linghai\'92s system. \
+
+\f0\i0\b 	
+\f2\i\b0 Flip dsx images right-side-up.
+\f0\i0\b \
+31 - 
+\f2\i\b0 Make dsx image available as standalone 2D image.\
+	Add dsxXrayImage::GetVtkImageData2D, dsxXrayImage::GetNumberOfFrames.
+\f0\i0\b \
+30 
+\f1\b0 - Now render dsx images in background using layers with a separate \
+	renderer from bone. Renderer takes imageActor takes imageData.
+\f0\b \
+29 
+\f1\b0 - Switched GUI rendering from vtkInteractorStyleTrackballCamera to 	vtkInteractorStyleTrackballActor.  Bone and slice now rotate\
+	independently, and bone rotates in both viewports!\
+	Added offset dsx image as well.\
+
+\f0\b 28 
+\f1\b0 - Added dsxXrayImage::GetVtkImageDataFrame (NOT USED)\
+	Overlay inline DSX image using vtkImageSlice, problems because it \
+	rotates bone and slices.
+\f2\i \
+
+\f0\i0\b 27 
+\f1\b0 - Created new window with two viewports with trackballed femur
+\f2\i \
+
+\f0\i0\b 26 
+\f1\b0 - Added dsxXrayImage::GetCubeParameterS2d etc.
+\f0\b \
+25 
+\f1\b0 - put m_ in front of member variables for dsx_GrabBufferActor
+\f0\b \
+24
+\f1\b0  - Renamed variables and cleaned up.
+\f0\b \
+23
+\f1\b0  - Add dsxGUI->CreateXrayImageViewerInline\
+	dsxGUI->CreateXrayImageViewerOffset\
+	dsxGUI->CreateXrayImageViewer\
+	Not used yet.  First try to create single container \
+	for both dsx windows. \
+
+\f0\b 22
+\f1\b0  - Add dsxGUI->Initialize()
+\f0\b \
+21 
+\f1\b0 - Moved CT readers into dsxBone
+\f0\b \
+20 
+\f1\b0 - Cleaned up dsxProject.cpp removed unused stuff and reordered\
+     switched char * to std::string to take literals. 
+\f0\b \
+19 
+\f1\b0 - Add m_GUI, m_\cf2 \cb3 inlineImage, m_offsetImage
+\f0\b \cf0 \cb1 \
+18 
+\f1\b0 - Made m_imageData a member of dsxXrayImage\
+
+\f0\b 17 
+\f1\b0 - new stand-alone main() file \'93bonezone.cpp\'94,  \
+	dsxProject is now an object,  \
+
+\f0\b 16 
+\f1\b0 - More minor neatening
+\f0\b \
+15 
+\f1\b0 - No longer takes filenames as command line arguments, \
+	also neatened more.\
+
+\f0\b 14 
+\f1\b0 - Neatened up Linghai\'92s code in DSX_Project.cpp
+\f0\b \
+13 
+\f1\b0 - Working version from Linghai with minor edits
+\f0\b \
+12
+\f1\b0  - Attempt to fix Linghai\'92s non-working version, \
+	with edits including to CMake
+\f0\b \
+11
+\f1\b0  - Working version before switching to Linghai\'92s non-working version}
