@@ -1,4 +1,9 @@
 #include "dsxBone.h"
+#include "itkImage.h"
+#include "itkImageFileReader.h"
+#include "itkRGBPixel.h" //need this to use any sort of rgb
+#include <itkImageToVTKImageFilter.h>
+
 
 dsxBone::dsxBone() 
 {
@@ -17,13 +22,32 @@ dsxBone::dsxBone()
 	mCtBoneVoxels->GetProperty()->SetScalarOpacity(mCtCompositeOpacity);
 	//mInternalTransformMatrix = vtkSmartPointer<vtkMatrix4x4>::New();
 }
+
 dsxBone::dsxBone(int totalFrames)
 {
 	mTotalFrames = totalFrames;
 	dsxBone();
 }
+
 dsxBone::~dsxBone()
 {}
+
+void dsxBone::Initialize(std::string imageName)
+{
+    typedef itk::Image< unsigned short ,3> ctRawType;
+    typedef itk::ImageFileReader<ctRawType> ctReaderType;
+    ctReaderType::Pointer ctRawReader = ctReaderType::New();
+    ctRawReader->SetFileName(imageName);
+    ctRawReader->Update();
+    ctRawType::Pointer ctRawImage = ctRawReader->GetOutput();
+    typedef itk::ImageToVTKImageFilter<ctRawType> ctITKtoVTKFilter;
+    //create a new filter then fass the itk data
+    ctITKtoVTKFilter::Pointer ctITKtoVtk = ctITKtoVTKFilter::New();
+    ctITKtoVtk->SetInput(ctRawImage);
+    ctITKtoVtk->Update();//call this to update the pipeline
+    //copy the data from the filter to a mroe vtk friendly data format
+    setBone(ctITKtoVtk->GetOutput());
+}
 
 void dsxBone::setBone(vtkImageData * ctImageData)
 {

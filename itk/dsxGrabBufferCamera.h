@@ -30,12 +30,11 @@ public:
     dsxGrabBufferCamera();
     ~dsxGrabBufferCamera();
     static dsxGrabBufferCamera * New();
-    vtkTypeMacro(dsxGrabBufferCamera, vtkInteractorStyleTrackballCamera);
-    vtkSmartPointer<dsxGrabBufferActor> trackballActorStyle;
-public:
+    vtkTypeMacro(dsxGrabBufferCamera, vtkInteractorStyleTrackballCamera);  //WHY IS THIS NEEDED?
     void SetWindow(vtkRenderWindow* ctWindow, vtkImageViewer2* xrayViewer, vtkImageData* xrayData, vtkRenderer* otherRenderer,std::vector<double> differences,dsxBone * tDsxBone);
 protected:
     void OnKeyPress() override;
+    vtkSmartPointer<dsxGrabBufferActor> trackballActorStyle;
 };
 
 #endif

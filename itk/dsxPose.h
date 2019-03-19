@@ -1,5 +1,6 @@
 #ifndef _DSX_POSE_
 #define _DSX_POSE_
+
 class dsxPose{
 public:
 	dsxPose();

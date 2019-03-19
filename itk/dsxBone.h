@@ -7,6 +7,7 @@
 #include <vtkSmartVolumeMapper.h>
 #include <vtkPiecewiseFunction.h>
 #include <vtkImageData.h>
+
 #include "dsxPose.h"
 #include <iostream>
 #include <list>
@@ -32,7 +33,8 @@ public:
 		dsxBone * ctBone = new dsxBone();
 		return ctBone;
 	}
-	void setBone(vtkImageData * ctImageData);
+    void Initialize(std::string imageName);
+    void setBone(vtkImageData * ctImageData);
 	void rotate(double roll,double yaw,double pitch);
 	void translate(double translateX,double translateY,double translateZ);
 	void setPosition(double setX, double setY, double setZ);

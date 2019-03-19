@@ -9,44 +9,44 @@ dsxGrabBufferActor::~dsxGrabBufferActor()
 }
 
 //this whole class needs cleaning up
-void dsxGrabBufferActor::SetWindow(vtkRenderWindow* ctWindow, vtkImageViewer2* xrayViewer, vtkImageData* xrayData, vtkRenderer* offset,std::vector<double> differences,dsxBone * tDsxBone)
+void dsxGrabBufferActor::SetWindow(vtkRenderWindow* m_ctWindow, vtkImageViewer2* xrayViewer, vtkImageData* xrayData, vtkRenderer* offset,std::vector<double> differences,dsxBone * tDsxBone)
 {
-    ctRenderWindow = ctWindow;
-    int* dim = ctWindow->GetSize();
-    height = dim[0]-1;
-    width = dim[1]-1;
+    m_ctRenderWindow = m_ctWindow;
+    int* dim = m_ctWindow->GetSize();
+    m_height = dim[0]-1;
+    m_width = dim[1]-1;
     //cout <<"height: " << height+1 <<"\t width = " << width+1 << endl;
-    ctPixelDataMatrix = new unsigned char[dim[0]*dim[1]*3+1];
+    m_ctPixelDataMatrix = new unsigned char[dim[0]*dim[1]*3+1];
     xrayImageData = xrayData;
-    xrayImageViewer = xrayViewer;
+    m_xrayImageViewer = xrayViewer;
     otherRenderer = offset;
     cubeParametersDifs = differences;
 
     tDsxBone->rotate(1,0,0);
     //tDsxBone->recordPose();
-    mActorDsxBone = tDsxBone;
+    m_ActorDsxBone = tDsxBone;
     setXray();
 }
 
 void dsxGrabBufferActor::setImageData(vtkImageData * im)// eventually switch this to window to image filter instead of this junk
 {
     vtkSmartPointer<vtkUnsignedCharArray> ar = vtkSmartPointer<vtkUnsignedCharArray>::New();
-    ar->SetArray(ctPixelDataMatrix,(height+1)*(width+1),1);
-    im->SetDimensions(height+1,width+1,1);
+    ar->SetArray(m_ctPixelDataMatrix,(m_height+1)*(m_width+1),1);
+    im->SetDimensions(m_height+1,m_width+1,1);
     im->AllocateScalars(VTK_UNSIGNED_CHAR,3);
     unsigned char* currentPixel;
-    for(int i =0;i<=width;i++)
+    for(int i =0;i<=m_width;i++)
     {
-        for(int j = 0 ; j<=height;j++)
+        for(int j = 0 ; j<=m_height;j++)
         {
             currentPixel = static_cast<unsigned char*>(im->GetScalarPointer(i,j,0));
-            if(ctPixelDataMatrix[(j*(width+1)+i)*3] != 0/*NULL*/)
+            if(m_ctPixelDataMatrix[(j*(m_width+1)+i)*3] != 0/*NULL*/)
             {
-                char intensity = ctPixelDataMatrix[(j*(width+1)+i)*3]*2;
+                char intensity = m_ctPixelDataMatrix[(j*(m_width+1)+i)*3]*2;
                 //cout << ctPixelDataMatrix[(j*(width+1)+i)*3] << " ";
                 //set different values to 0 to give different color to the image
                 //still need to figure out how to add opacity to the image
-                currentPixel[0] = intensity;
+                currentPixel[0] = intensity;   //This makes it red
                 currentPixel[1] = 0;//ctPixelDataMatrix[(j*(width+1)+i)*3];
                 currentPixel[2] = 0;//ctPixelDataMatrix[(j*(width+1)+i)*3];
             }
@@ -63,7 +63,7 @@ void dsxGrabBufferActor::setImageData(vtkImageData * im)// eventually switch thi
 }
 void dsxGrabBufferActor::resetPose()
 {
-    mActorDsxBone->restorePose();
+    m_ActorDsxBone->restorePose();
 }
 void dsxGrabBufferActor::startTimer()
 {
@@ -80,26 +80,26 @@ void dsxGrabBufferActor::getMetric(unsigned char * matrx)//this blocks everthing
     //gradient for the ct
     
     //pretty slow mostly the cv kernel stuff but also needs to be graphics card accelerated
-    Mat m(height+1, width+1, CV_8UC3,matrx);// this works so we can now use opencv
+    Mat m(m_height+1, m_width+1, CV_8UC3,matrx);// this works so we can now use opencv
     Mat src_grayCT, grad_xCT, grad_yCT;
     Mat abs_grad_xCT, abs_grad_yCT;
     cvtColor( m, src_grayCT, CV_BGR2GRAY );
-    Sobel(src_grayCT,grad_xCT,ddepth,1,0,3,scale,delta, BORDER_DEFAULT);
+    Sobel(src_grayCT,grad_xCT,m_ddepth,1,0,3,m_scale,m_delta, BORDER_DEFAULT);
     convertScaleAbs( grad_xCT, abs_grad_xCT );
-    Sobel(src_grayCT,grad_yCT,ddepth,0,1,3,scale,delta, BORDER_DEFAULT);
+    Sobel(src_grayCT,grad_yCT,m_ddepth,0,1,3,m_scale,m_delta, BORDER_DEFAULT);
     convertScaleAbs( grad_yCT, abs_grad_yCT );//do dot product on the grad_x and y not the abs ones since you want the negative values
     
     //Calculates gradient correlation
     Mat y,x,xx,yy;
     Mat x2,y2;
-    y = grad_yXray.mul(grad_yCT);
-    x = grad_xXray.mul(grad_xCT);
+    y = m_grad_yXray.mul(grad_yCT);
+    x = m_grad_xXray.mul(grad_xCT);
     double sumY = sum(y)[0];
     double sumX = sum(x)[0];
     xx = grad_xCT.mul(grad_xCT);
     yy = grad_yCT.mul(grad_yCT);
-    x2 = grad_xXray.mul(grad_xXray);
-    y2 = grad_yXray.mul(grad_yXray);
+    x2 = m_grad_xXray.mul(m_grad_xXray);
+    y2 = m_grad_yXray.mul(m_grad_yXray);
     double SS1 = sum(yy)[0] + sum(xx)[0];
     double SQ1 = std::sqrt(SS1);
     double SS2 = sum(y2)[0] + sum(x2)[0];
@@ -129,47 +129,46 @@ void dsxGrabBufferActor::visualizeBuffer()
     vtkSmartPointer<vtkImageData> im = vtkSmartPointer<vtkImageData>::New();
     setImageData(im);
     
-    xrayCTImageBlender = vtkSmartPointer<vtkImageBlend>::New();
+    m_xrayCTImageBlender = vtkSmartPointer<vtkImageBlend>::New();
     //xrayCTImageBlender->SetBlendModeToCompound();//this doesnt seem to do anything
-    xrayCTImageBlender->AddInputData(im);
-    xrayCTImageBlender->AddInputData(xrayImageData);
+    m_xrayCTImageBlender->AddInputData(im);
+    m_xrayCTImageBlender->AddInputData(xrayImageData);
     
-    xrayCTImageBlender->SetOpacity(0, .5);
-    xrayCTImageBlender->SetOpacity(1,.5);
-    xrayCTImageBlender->Update();
+    m_xrayCTImageBlender->SetOpacity(0, .5);
+    m_xrayCTImageBlender->SetOpacity(1,.5);
+    m_xrayCTImageBlender->Update();
     
-    xrayImageViewer->SetInputData(xrayCTImageBlender->GetOutput());
-    xrayImageViewer->GetRenderer()->ResetCamera();
-    xrayImageViewer->Render();
+    m_xrayImageViewer->SetInputData(m_xrayCTImageBlender->GetOutput());
+    m_xrayImageViewer->GetRenderer()->ResetCamera();
+    m_xrayImageViewer->Render();
     
-    getMetric(ctPixelDataMatrix);
+    getMetric(m_ctPixelDataMatrix);
     
 }
 
 void dsxGrabBufferActor::captureBuffer()
 {
-    ctPixelDataMatrix = ctRenderWindow->GetPixelData(0,0,height,width,true);
+    m_ctPixelDataMatrix = m_ctRenderWindow->GetPixelData(0,0,m_height,m_width,true);
     //superimposes and generates a metric
     visualizeBuffer();
 }
 
 void dsxGrabBufferActor::setXray()
 {
-    
-    int *dims = xrayImageViewer->GetSize();
-    xrayPixelMatrix = xrayImageViewer->GetRenderWindow()->GetPixelData(0,0,dims[0]-1,dims[1]-1,true);
+    int *dims = m_xrayImageViewer->GetSize();
+    m_xrayPixelMatrix = m_xrayImageViewer->GetRenderWindow()->GetPixelData(0,0,dims[0]-1,dims[1]-1,true);
     
     //gradient for the xray
-    Mat m3(xrayImageViewer->GetSize()[0], xrayImageViewer->GetSize()[1], CV_8UC3,xrayPixelMatrix);
+    Mat m3(m_xrayImageViewer->GetSize()[0], m_xrayImageViewer->GetSize()[1], CV_8UC3,m_xrayPixelMatrix);
     Mat m2;
     //resize so they have the same number of pixels
-    resize(m3,m2,cv::Size(),500.0/xrayImageViewer->GetSize()[0],500.0/xrayImageViewer->GetSize()[0]);
+    resize(m3,m2,cv::Size(),500.0/m_xrayImageViewer->GetSize()[0],500.0/m_xrayImageViewer->GetSize()[0]);
     //sets values for gradients of the xray images so it doesnt need to be recomputed
-    cvtColor( m2, src_grayXray, CV_BGR2GRAY );
-    Sobel(src_grayXray,grad_xXray,ddepth,1,0,3,scale,delta, BORDER_DEFAULT);
-    convertScaleAbs( grad_xXray, abs_grad_xXray );
-    Sobel(src_grayXray,grad_yXray,ddepth,0,1,3,scale,delta, BORDER_DEFAULT);
-    convertScaleAbs( grad_yXray, abs_grad_yXray );
+    cvtColor( m2, m_src_grayXray, CV_BGR2GRAY );
+    Sobel(m_src_grayXray,m_grad_xXray,m_ddepth,1,0,3,m_scale,m_delta, BORDER_DEFAULT);
+    convertScaleAbs( m_grad_xXray, m_abs_grad_xXray );
+    Sobel(m_src_grayXray,m_grad_yXray,m_ddepth,0,1,3,m_scale,m_delta, BORDER_DEFAULT);
+    convertScaleAbs( m_grad_yXray, m_abs_grad_yXray );
 }
 
 void dsxGrabBufferActor::OnKeyPress()
@@ -187,7 +186,7 @@ void dsxGrabBufferActor::OnKeyPress()
     if(key == "s")
     {
         //must be set here or the program won't work -\_(-_-)_/-
-        cout <<"okay" << endl;
+        cout <<"okay dsxGrabBufferActor::OnKeyPress()" << endl;
         setXray();
     }
     if(key == "d")

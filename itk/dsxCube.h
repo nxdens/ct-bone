@@ -17,8 +17,8 @@ public:
 
     dsxCube();
     ~dsxCube();
-    
-    void findParams(char * filename);
+
+    void ParseCubeParamsFromFile(std::string filename);
 };
 
 #endif

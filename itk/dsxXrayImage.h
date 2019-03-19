@@ -21,6 +21,8 @@
 #include <vtkImageFlip.h>
 #include <vtkPolyDataAlgorithm.h>
 #include <vtkInteractorStyleImage.h>
+#include <vtkImageSliceMapper.h>
+#include <vtkImageSlice.h>
 
 //opencv includes
 #include <opencv2/core/core.hpp>
@@ -35,20 +37,33 @@ class dsxXrayImage
 public:
 	dsxXrayImage();
 	~dsxXrayImage();
-    Mat currentImage;
+
+    void Initialize(std::string imageName, std::string cubeName, int startFrame = 0);
+
+    int GetNumberOfFrames(void);
+
+    double GetCubeParameter(int index);
+
+    double GetCubeParameterS2d(void);
+    double GetCubeParameterX(void);
+    double GetCubeParameterY(void);
+    double GetCubeParameterZ(void);
+    double GetCubeParameterRoll(void);
+    double GetCubeParameterPitch(void);
+    double GetCubeParameterYaw(void);
+    
+    vtkImageData * GetVtkImageData(void);
+    vtkSmartPointer<vtkImageSlice> GetVtkImageSlice(int frameNumber);
+    void GetVtkImageData2D(vtkSmartPointer<vtkImageData> imageData2D, int frameNumber);
+
+    //Mat currentImage;
 private:
-    std::vector<Mat> imageStack;
-    int currentFrame = 0;
-    dsxCube parameters;
-public:
-    /*static xrayImage * New()
-     {
-     xrayImage * image = new xrayImage();
-     return image;
-     }*/
-    void initialize(char * imageName,char * cubeName, int startFrame = 0);
-    void toImageData( vtkImageData * im);
-    double getCubeParameterAt(int i);
+    void TranferImageStackToVtkImageData3D(vtkImageData * imageData3D);
+
+    std::vector<Mat> m_imageStack;
+    int m_currentFrame = 0;
+    dsxCube m_cube;
+    vtkSmartPointer<vtkImageData> m_vtkImageData3D;
 };
 
 

@@ -10,30 +10,30 @@ dsxTiffMovie::~dsxTiffMovie()
 
 void dsxTiffMovie::setImageViewer(vtkImageViewer2* imageViewer)
 {
-    maxSlices = imageViewer->GetSliceMax();
-    minSlices = imageViewer->GetSliceMin();
-    _ImageViewer = imageViewer;
+    m_maxSlices = imageViewer->GetSliceMax();
+    m_minSlices = imageViewer->GetSliceMin();
+    m_ImageViewer = imageViewer;
 }
 
 void dsxTiffMovie::moveForward()
 {
-    if(currentSlice < maxSlices)
+    if(m_currentSlice < m_maxSlices)
     {
-        currentSlice += 1;
-        cout<< currentSlice << endl;
-        _ImageViewer->SetSlice(currentSlice);
-        _ImageViewer->Render();
+        m_currentSlice += 1;
+        cout<< m_currentSlice << endl;
+        m_ImageViewer->SetSlice(m_currentSlice);
+        m_ImageViewer->Render();
     }
 }
 
 void dsxTiffMovie::moveBackwards()
 {
-    if(currentSlice > minSlices)
+    if(m_currentSlice > m_minSlices)
     {
-        currentSlice -= 1;
-        cout<< currentSlice << endl;
-        _ImageViewer->SetSlice(currentSlice);
-        _ImageViewer->Render();
+        m_currentSlice -= 1;
+        cout<< m_currentSlice << endl;
+        m_ImageViewer->SetSlice(m_currentSlice);
+        m_ImageViewer->Render();
     }
 }
 

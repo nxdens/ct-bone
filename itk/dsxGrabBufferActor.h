@@ -47,26 +47,26 @@ public:
 
     static dsxGrabBufferActor * New();
     vtkTypeMacro(dsxGrabBufferActor, vtkInteractorStyleTrackballActor);
-    vtkSmartPointer<vtkImageData> xrayImageData;//used only to blend images should try to find a better wa to do this so that we can open tiff files
+    vtkSmartPointer<vtkImageData> xrayImageData;//used only to blend images should try to find a better way to do this so that we can open tiff files
     std::vector<double> cubeParametersDifs;
     vtkSmartPointer<vtkRenderer> otherRenderer;// give both window the other window and be able to switch on and off on screen rendering of the other with one
     
 protected:
-    vtkSmartPointer<vtkRenderWindow> ctRenderWindow;
-    vtkSmartPointer<vtkImageBlend> xrayCTImageBlender;
-    vtkSmartPointer<vtkVolume> ctProp; //eventually change this to be an array for multiple objects
-    int height;
-    int width;
-    const char rgb = 3;
-    int scale = 1;
-  	int delta = 0;
-  	int ddepth = CV_16S;
-    unsigned char * ctPixelDataMatrix;
-    unsigned char * xrayPixelMatrix;
-    Mat src_grayXray, grad_xXray, grad_yXray;
-    Mat abs_grad_xXray, abs_grad_yXray;
-    vtkSmartPointer<vtkImageViewer2> xrayImageViewer;
-    dsxBone * mActorDsxBone;
+    vtkSmartPointer<vtkRenderWindow> m_ctRenderWindow;
+    vtkSmartPointer<vtkImageBlend> m_xrayCTImageBlender;
+    vtkSmartPointer<vtkVolume> m_ctProp; //eventually change this to be an array for multiple objects
+    int m_height;
+    int m_width;
+    const char m_rgb = 3;
+    int m_scale = 1;
+  	int m_delta = 0;
+  	int m_ddepth = CV_16S;
+    unsigned char * m_ctPixelDataMatrix;
+    unsigned char * m_xrayPixelMatrix;
+    Mat m_src_grayXray, m_grad_xXray, m_grad_yXray;
+    Mat m_abs_grad_xXray, m_abs_grad_yXray;
+    vtkSmartPointer<vtkImageViewer2> m_xrayImageViewer;
+    dsxBone * m_ActorDsxBone;
 public:
     void SetWindow(vtkRenderWindow * ctWindow, vtkImageViewer2 * xrayViewer, vtkImageData * xrayData, vtkRenderer * offset,std::vector<double> differences,dsxBone * tDsxBone );
     void setImageData(vtkImageData * im);// eventually switch this to window to image filter instaed of this jank
@@ -77,7 +77,7 @@ public:
     void captureBuffer();
     void setXray();
     void OnKeyPress() override;
-    void dsxGrabBufferActor::resetPose();
+    void resetPose();
 };
 
 

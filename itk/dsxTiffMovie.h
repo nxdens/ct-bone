@@ -35,10 +35,10 @@ public:
     static dsxTiffMovie * New();
     vtkTypeMacro(dsxTiffMovie, vtkInteractorStyleImage);
 protected:
-    vtkImageViewer2 * _ImageViewer;
-    int maxSlices = 0;
-    int minSlices = 0;
-    int currentSlice = 0;
+    vtkImageViewer2 * m_ImageViewer;
+    int m_maxSlices = 0;
+    int m_minSlices = 0;
+    int m_currentSlice = 0;
 public:
     void setImageViewer(vtkImageViewer2* imageViewer);
     void moveForward();

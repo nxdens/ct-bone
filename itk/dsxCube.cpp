@@ -8,7 +8,7 @@ dsxCube::~dsxCube()
 {
 }
 
-void dsxCube::findParams(char * filename)
+void dsxCube::ParseCubeParamsFromFile(std::string filename)
 {
     std::ifstream cubeFile;
     cubeFile.open(filename);

@@ -19,27 +19,27 @@ void dsxPose::translate(double translateX,double translateY,double translateZ)
 	this->mTranslateX += translateX;
 	this->mTranslateY += translateY;
 	this->mTranslateZ += translateZ;
-	mPosePositions[1] += translateX;
-	mPosePositions[2] += translateY;
-	mPosePositions[3] += translateZ;
+	mPosePositions[0] += translateX;
+	mPosePositions[1] += translateY;
+	mPosePositions[2] += translateZ;
 }
 void dsxPose::setPosition(double setX, double setY, double setZ)
 {
 	this->mTranslateX = setX;
 	this->mTranslateY = setY;
 	this->mTranslateZ = setZ;
-	mPosePositions[1] = setX;
-	mPosePositions[2] = setY;
-	mPosePositions[3] = setZ;
+	mPosePositions[0] = setX;
+	mPosePositions[1] = setY;
+	mPosePositions[2] = setZ;
 }
 void dsxPose::rotate(double roll,double yaw, double pitch)
 {
 	this->mRoll += roll;
 	this->mYaw += yaw;
 	this->mPitch += pitch;
-	mPoseRotations[1] += roll;
-	mPoseRotations[2] += yaw;
-	mPoseRotations[3] += pitch;
+	mPoseRotations[0] += roll;
+	mPoseRotations[1] += yaw;
+	mPoseRotations[2] += pitch;
 }
 
 void dsxPose::scale(double scaleFactor)
